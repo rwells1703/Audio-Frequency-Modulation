@@ -5,14 +5,17 @@ from matplotlib import pyplot as plt
 SAMPLE_RATE = 44100
 
 def main():
-    # Generates a 440Hz (A4) note for 2 seconds
-    seconds = 2
+    time, amplitude = default_wave(2, 440)
 
+    plot_wave(time, amplitude)
+    play_wave(amplitude)
+
+# Generates a sine wave for a specified number of seconds
+def default_wave(seconds, frequency):
     time = np.linspace(0, seconds, seconds * SAMPLE_RATE, False)
-    note = np.sin(440 * time * 2 * np.pi)
-
-    plot_wave(time, note)
-    play_note(note)
+    amplitude = np.sin(frequency * time * 2 * np.pi)
+    
+    return time, amplitude
 
 # Plots the note against time, on a graph
 def plot_wave(time, note):
@@ -20,7 +23,7 @@ def plot_wave(time, note):
     plt.show()
 
 # Plays the note as sound
-def play_note(note):
+def play_wave(note):
     audio = note * (2**15 - 1) / np.max(np.abs(note))
     audio = audio.astype(np.int16)
 
