@@ -11,7 +11,7 @@ def main():
     play_wave(amplitude)
 
 # Generates a sine wave for a specified number of seconds
-def default_wave(seconds, frequency):
+def generate_wave(seconds, frequency):
     time = np.linspace(0, seconds, seconds * SAMPLE_RATE, False)
     amplitude = np.sin(frequency * time * 2 * np.pi)
     
