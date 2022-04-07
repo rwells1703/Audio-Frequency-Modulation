@@ -35,6 +35,22 @@ def generate_flat_signal(amplitude, segment_time):
 
     return flat_signal
 
+# From a given set of possible values, generate a list of shift key values
+def generate_shift_key_values(shift_key_possibilites):
+    shift_key_values = []
+
+    for amplitude in shift_key_possibilites["a"]:
+        for frequency in shift_key_possibilites["f"]:
+            for phase in shift_key_possibilites["p"]:
+                shift_key_values.append({"a":amplitude, "f":frequency, "p":phase})
+
+    return shift_key_values
+
+# Display all the possible shift key values
+def display_shift_key_values(shift_key_values):
+    for v in range(0,len(shift_key_values)):
+        print(v, shift_key_values[v])
+
 # Plays the wave as sound
 def play_wave(wave):
     audio = wave * (2**15 - 1) / np.max(np.abs(wave))
