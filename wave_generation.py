@@ -42,10 +42,7 @@ def amplitude_shift_keying(bits, bit_time=0.2, high_amp=1, frequency=440):
 
         waves.append(wave)
     
-    time = np.linspace(0, bit_time*len(bits), np.ceil(bit_time*len(bits) * SAMPLE_RATE).astype(int), False)
-    note = np.append([], waves)
-
-    return time, note
+    return combine_waves(waves, bit_time*len(bits))
 
 # Generates a waveform using Frequency Shift Keying
 def frequency_shift_keying(bits, bit_time=0.2, low_freq=440, high_freq=523.25, amplitude=1):
@@ -62,10 +59,7 @@ def frequency_shift_keying(bits, bit_time=0.2, low_freq=440, high_freq=523.25, a
         time_slice, wave = generate_wave(bit_time, frequency, amplitude)
         waves.append(wave)
     
-    time = np.linspace(0, bit_time*len(bits), np.ceil(bit_time*len(bits) * SAMPLE_RATE).astype(int), False)
-    note = np.append([], waves)
-
-    return time, note
+    return combine_waves(waves, bit_time*len(bits))
 
 # Generates a waveform using Phase Shift Keying
 def phase_shift_keying(bits, bit_time=0.2, frequency=440, amplitude=1):
@@ -82,11 +76,13 @@ def phase_shift_keying(bits, bit_time=0.2, frequency=440, amplitude=1):
         time_slice, wave = generate_wave(bit_time, frequency, amplitude * phase)
         waves.append(wave)
     
-    time = np.linspace(0, bit_time*len(bits), np.ceil(bit_time*len(bits) * SAMPLE_RATE).astype(int), False)
+    return combine_waves(waves, bit_time*len(bits))
+
+def combine_waves(waves, total_length):
+    time = np.linspace(0, total_length, np.ceil(total_length * SAMPLE_RATE).astype(int), False)
     note = np.append([], waves)
 
     return time, note
-
 # Plots the note against time, on a graph
 def plot_wave(time, note):
     plt.plot(time, note) 
