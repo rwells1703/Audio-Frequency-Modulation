@@ -1,6 +1,5 @@
 import simpleaudio
 import numpy as np
-from matplotlib import pyplot as plt
 
 SAMPLE_RATE = 44100
 
@@ -11,18 +10,30 @@ def generate_wave(seconds, frequency, amplitude, phase):
     
     return wave
 
-# Appends many wave segments together
-def combine_waves(waves):
-    return np.append([], waves)
+# Appends one wave segment to the end of another
+def combine_waves(wave1, wave2):
+    return np.append(wave1, wave2)
 
 # Generate a time axis for a given amount of wave segments
 def generate_time_axis(segment_time, segment_count):
     return np.linspace(0, segment_time*segment_count, (np.ceil(segment_time * SAMPLE_RATE) * segment_count).astype(int), False)
 
-# Plots the wave against time, on a graph
-def plot_wave(time, wave):
-    plt.plot(time, wave) 
-    plt.show()
+# Turn a digital signal into a waveform
+def generate_digital_wave(data, segment_time):
+    wave = []
+
+    for d in data:
+        wave_segment = generate_flat_signal(d, segment_time)
+        wave = combine_waves(wave, wave_segment)
+
+    return wave
+
+# Generate a flat line signal
+def generate_flat_signal(amplitude, segment_time):
+    samples = np.ceil(segment_time * SAMPLE_RATE).astype(int)
+    flat_signal = np.full(samples, amplitude)
+
+    return flat_signal
 
 # Plays the wave as sound
 def play_wave(wave):
