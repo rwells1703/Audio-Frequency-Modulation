@@ -7,25 +7,26 @@ SAMPLE_RATE = 44100
 # Generates a sine wave for a specified number of seconds
 def generate_wave(seconds, frequency, amplitude_coef):
     time = np.linspace(0, seconds, np.ceil(seconds * SAMPLE_RATE).astype(int), False)
-    amplitude = np.sin(frequency * time * 2 * np.pi) * amplitude_coef
+    wave = np.sin(frequency * time * 2 * np.pi) * amplitude_coef
     
-    return time, amplitude
+    return wave
 
-# Appends many waves along the time axis
-def combine_waves(waves, total_length):
-    time = np.linspace(0, total_length, np.ceil(total_length * SAMPLE_RATE).astype(int), False)
-    note = np.append([], waves)
+# Appends many wave segments together
+def combine_waves(waves):
+    return np.append([], waves)
 
-    return time, note
+# Generate a time axis for a given amount of wave segments
+def generate_time_axis(segment_time, segment_count):
+    return np.linspace(0, segment_time*segment_count, (np.ceil(segment_time * SAMPLE_RATE) * segment_count).astype(int), False)
 
-# Plots the note against time, on a graph
-def plot_wave(time, note):
-    plt.plot(time, note) 
+# Plots the wave against time, on a graph
+def plot_wave(time, wave):
+    plt.plot(time, wave) 
     plt.show()
 
-# Plays the note as sound
-def play_wave(note):
-    audio = note * (2**15 - 1) / np.max(np.abs(note))
+# Plays the wave as sound
+def play_wave(wave):
+    audio = wave * (2**15 - 1) / np.max(np.abs(wave))
     audio = audio.astype(np.int16)
 
     play_obj = simpleaudio.play_buffer(audio, 1, 2, SAMPLE_RATE)
