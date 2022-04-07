@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 SAMPLE_RATE = 44100
 
 def main():
-    time, amplitude = frequency_shift_keying([0,1,1,0,0,0,0,0,1,0,1,1,1,0,0,1,1,1,1])
+    time, amplitude = phase_shift_keying([0,1,1,0,0,0,0,0,1,0,1,1,1,0,0,1,1,1,1])
 
     plot_wave(time, amplitude)
     play_wave(amplitude)
@@ -54,12 +54,32 @@ def frequency_shift_keying(bits, bit_time=0.2, low_freq=440, high_freq=523.25, a
     for b in bits:
         if b == 0:
             # Generate a low frequency wave for a 0
-            freq = low_freq
+            frequency = low_freq
         else:
             # Generate a high frequency wave for a 1
-            freq = high_freq
+            frequency = high_freq
 
-        time_slice, wave = generate_wave(bit_time, freq, amplitude)
+        time_slice, wave = generate_wave(bit_time, frequency, amplitude)
+        waves.append(wave)
+    
+    time = np.linspace(0, bit_time*len(bits), np.ceil(bit_time*len(bits) * SAMPLE_RATE).astype(int), False)
+    note = np.append([], waves)
+
+    return time, note
+
+# Generates a waveform using Phase Shift Keying
+def phase_shift_keying(bits, bit_time=0.2, frequency=440, amplitude=1):
+    waves = []
+
+    for b in bits:
+        if b == 0:
+            # Generate an in phase wave for a 0
+            phase = 1
+        else:
+            # Generate an out of phase wave for a 1
+            phase = -1
+
+        time_slice, wave = generate_wave(bit_time, frequency, amplitude * phase)
         waves.append(wave)
     
     time = np.linspace(0, bit_time*len(bits), np.ceil(bit_time*len(bits) * SAMPLE_RATE).astype(int), False)
