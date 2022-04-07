@@ -3,7 +3,7 @@ import numpy as np
 import utils
 
 # Generates a waveform using Amplitude Shift Keying
-def amplitude_shift_keying(bits, bit_time=0.2, high_amp=1, frequency=440):
+def amplitude_shift_keying(bits, bit_time=0.2, high_amp=1, frequency=440, phase=1):
     waves = []
 
     for b in bits:
@@ -13,7 +13,7 @@ def amplitude_shift_keying(bits, bit_time=0.2, high_amp=1, frequency=440):
             wave_segment = np.full(time_divisions, 0)
         else:
             # Generate a wave for a 1
-            wave_segment = utils.generate_wave(bit_time, frequency, high_amp)
+            wave_segment = utils.generate_wave(bit_time, frequency, high_amp, phase)
 
         waves.append(wave_segment)
     
@@ -26,7 +26,7 @@ def amplitude_shift_keying(bits, bit_time=0.2, high_amp=1, frequency=440):
     return time, wave
 
 # Generates a waveform using Frequency Shift Keying
-def frequency_shift_keying(bits, bit_time=0.2, low_freq=440, high_freq=523.25, amplitude=1):
+def frequency_shift_keying(bits, bit_time=0.2, low_freq=440, high_freq=523.25, amplitude=1, phase=1):
     waves = []
 
     for b in bits:
@@ -37,7 +37,7 @@ def frequency_shift_keying(bits, bit_time=0.2, low_freq=440, high_freq=523.25, a
             # Generate a high frequency wave for a 1
             frequency = high_freq
 
-        wave_segment = utils.generate_wave(bit_time, frequency, amplitude)
+        wave_segment = utils.generate_wave(bit_time, frequency, amplitude, phase)
         waves.append(wave_segment)
     
     # Create a time axis
@@ -60,7 +60,7 @@ def phase_shift_keying(bits, bit_time=0.2, frequency=440, amplitude=1):
             # Generate an out of phase wave for a 1
             phase = -1
 
-        wave_segment = utils.generate_wave(bit_time, frequency, amplitude * phase)
+        wave_segment = utils.generate_wave(bit_time, frequency, amplitude, phase)
         waves.append(wave_segment)
     
     # Create a time axis

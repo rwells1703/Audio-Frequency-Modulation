@@ -1,4 +1,5 @@
 import generic_shift_keying
+import binary_shift_keying
 import utils
 
 def main():

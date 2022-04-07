@@ -5,9 +5,9 @@ from matplotlib import pyplot as plt
 SAMPLE_RATE = 44100
 
 # Generates a sine wave for a specified number of seconds
-def generate_wave(seconds, frequency, amplitude_coef):
+def generate_wave(seconds, frequency, amplitude, phase):
     time = np.linspace(0, seconds, np.ceil(seconds * SAMPLE_RATE).astype(int), False)
-    wave = np.sin(frequency * time * 2 * np.pi) * amplitude_coef
+    wave = np.sin(frequency * time * 2 * np.pi) * amplitude * phase
     
     return wave
 
