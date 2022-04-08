@@ -3,9 +3,9 @@ import utils
 # Characteristics of the carrier wave
 carrier_values = {"a":1, "f":5, "p":1}
 
-# Example 4 bit shift keying (binary shift key modulation on all of: amplitude, frequency and phase)
+# Example shift keying (binary shift key modulation on all of: amplitude, frequency and phase)
 #shift_key_possibilites = {"a":[1,0.1], "f":[80,120], "p":[-1,1]}
-shift_key_possibilites = {"a":[1], "f":range(200,1800,100), "p":[1]}
+shift_key_possibilites = {"a":[1], "f":range(150,9999,20), "p":[1]}
 
 shift_key_values = utils.generate_shift_key_values(shift_key_possibilites)
 
