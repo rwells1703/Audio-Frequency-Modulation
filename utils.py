@@ -18,8 +18,8 @@ def combine_waves(wave1, wave2):
 def generate_time_axis(segment_time, segment_count):
     return np.linspace(0, segment_time*segment_count, (np.ceil(segment_time * SAMPLE_RATE) * segment_count).astype(int), False)
 
-# Turn a digital signal into a waveform
-def generate_digital_wave(data, segment_time):
+# Turn a square wave signal into a waveform
+def generate_square_wave(data, segment_time):
     wave = []
 
     for d in data:
@@ -39,9 +39,11 @@ def generate_flat_signal(amplitude, segment_time):
 def generate_shift_key_values(shift_key_possibilites):
     shift_key_values = []
 
+    # Iterate through all possible variations of the given values
     for amplitude in shift_key_possibilites["a"]:
         for frequency in shift_key_possibilites["f"]:
             for phase in shift_key_possibilites["p"]:
+                # Add this variation to the list
                 shift_key_values.append({"a":amplitude, "f":frequency, "p":phase})
 
     return shift_key_values
