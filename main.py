@@ -5,6 +5,8 @@ import utils
 import data_conversion
 
 def main():
+    pyaudio_instance, stream = utils.start_pyaudio()
+
     # Text to be converted
     text = "hello world"
 
@@ -50,7 +52,9 @@ def main():
     plt.show()
 
     # Play the modulated wave as a sound
-    utils.play_wave(wave)
+    utils.play_wave(stream, wave)
+
+    utils.stop_pyaudio(pyaudio_instance, stream)
 
 if __name__ == "__main__":
     main()

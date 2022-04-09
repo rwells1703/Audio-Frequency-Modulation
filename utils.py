@@ -1,4 +1,4 @@
-import simpleaudio
+import pyaudio
 import numpy as np
 
 SAMPLE_RATE = 44100
@@ -53,11 +53,26 @@ def display_shift_key_values(shift_key_values):
     for v in range(0,len(shift_key_values)):
         print(v, shift_key_values[v])
 
+# Start the pyaudio library and a stream
+def start_pyaudio():
+    pyaudio_instance = pyaudio.PyAudio()
+
+    stream = pyaudio_instance.open(format=pyaudio.paFloat32,
+                    channels=1,
+                    rate=SAMPLE_RATE,
+                    output=True)
+
+    return pyaudio_instance, stream
+
+# Stop the stream, and the pyaudio library
+def stop_pyaudio(pyaudio_instance, stream):
+    stream.stop_stream()
+    stream.close()
+
+    pyaudio_instance.terminate()
+
 # Plays the wave as sound
-def play_wave(wave):
-    audio = wave * (2**15 - 1) / np.max(np.abs(wave))
-    audio = audio.astype(np.int16)
+def play_wave(stream, wave):
+    wave = wave.astype(np.float32).tobytes()
 
-    play_obj = simpleaudio.play_buffer(audio, 1, 2, SAMPLE_RATE)
-
-    play_obj.wait_done()
+    stream.write(wave)
