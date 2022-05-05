@@ -1,8 +1,12 @@
+import struct
 import pyaudio
-import wave
+import wave as w
 import numpy as np
 
+# Define audio parameters
 SAMPLE_RATE = 44100
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
 RECORDING_CHUNK_SIZE = 1024
 
 # Generates a sine wave for a specified number of seconds
@@ -61,14 +65,14 @@ def start_pyaudio():
     pyaudio_instance = pyaudio.PyAudio()
 
     # Create the stream for playing audio through the speakers
-    stream_play = pyaudio_instance.open(format=pyaudio.paFloat32,
-                    channels=1,
+    stream_play = pyaudio_instance.open(format=FORMAT,
+                    channels=CHANNELS,
                     rate=SAMPLE_RATE,
                     output=True)
 
     # Create the stream for recording audio from the microphone     
-    stream_record = pyaudio_instance.open(format=pyaudio.paInt16,
-                channels=1,
+    stream_record = pyaudio_instance.open(format=FORMAT,
+                channels=CHANNELS,
                 rate=SAMPLE_RATE,
                 frames_per_buffer=RECORDING_CHUNK_SIZE,
                 input=True)
@@ -95,42 +99,58 @@ def play_wave(stream, wave):
     # Write the data to the playback stream
     stream.write(wave)
 
-# Records the microphone input as a wave
-def record_audio(stream):
+# Records the microphone input as a wave and outputs the data as bytes
+def record_audio(stream, seconds):
     print("Started recording")
-    frames = []
-
-    # Duration of the recording
-    seconds = 0.1
+    data = b''
 
     # Take the specified number of recording chunks
-    for i in range(0, int(SAMPLE_RATE * seconds / RECORDING_CHUNK_SIZE)):
+    for i in range(0, int(SAMPLE_RATE / RECORDING_CHUNK_SIZE * seconds)):
         # Read the audio frame from the stream
-        data = stream.read(RECORDING_CHUNK_SIZE)
+        frame = stream.read(RECORDING_CHUNK_SIZE)
         # Write the frame to frame list
-        frames.append(data)
+        data += frame
 
     print("Stopped recording")
-    return frames
+
+    return data[47042:]
+    #return data
+
+# Plays audio data as bytes
+def play_audio(stream, data):
+    stream.write(data)
 
 # Save the recorded audio frames to a wav file
 def save_audio_file(pyaudio_instance, frames):
-    file = wave.open("sound.wav", 'wb')
+    with w.open("sound.wav", 'wb') as file:
+        # Set the parameters for the audio file
+        file.setnchannels(CHANNELS)
+        file.setsampwidth(pyaudio_instance.get_sample_size(FORMAT))
+        file.setframerate(SAMPLE_RATE)
+        file.writeframes(frames)
 
-    # Set the parameters for the audio file
-    file.setnchannels(1)
-    file.setsampwidth(pyaudio_instance.get_sample_size(pyaudio.paInt16))
-    file.setframerate(SAMPLE_RATE)
-    file.writeframes(b''.join(frames))
+# Read the audio file and output the data in bytes
+def read_audio_file():
+    with w.open("sound.wav") as file:
+        frame_number = file.getnframes()
+        data = file.readframes(frame_number)
 
-    file.close()
+    return data
 
-# Convert audio data from the list of frames to a single wave
-def audio_frames_to_wave(frames):
-    wave = []
-    
-    for b in frames:
-        for i in b:
-            wave.append(i)
+# Convert a bytestring of wav audio data to a list of integer values
+def wav_data_to_wave(data):
+    data_tuples = struct.iter_unpack("H", data)
+    wave = list(map(lambda t : t[0], data_tuples))
 
     return wave
+
+# Transform a wave into its frequency and fourier components
+def generate_fourier_wave(wave):
+    fourier_wave = np.fft.fft(wave)
+
+    N = len(fourier_wave)
+    n = np.arange(N)
+    T = N/SAMPLE_RATE
+    frequency = n/T
+    
+    return frequency, fourier_wave

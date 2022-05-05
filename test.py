@@ -5,13 +5,12 @@ import utils
 
 pyaudio_instance, stream_play, stream_record = utils.start_pyaudio()
 
-frames = utils.record_audio(stream_record)
-
-utils.save_audio_file(pyaudio_instance, frames)
-wave = utils.audio_frames_to_wave(frames)
+data = utils.record_audio(stream_record, 1)
+wave = utils.wav_data_to_wave(data)
 
 utils.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
 
-plt.plot(np.linspace(0, 1, len(wave)), wave)
+freq, fourier_wave = utils.generate_fourier_wave(wave)
 
+plt.plot(freq[1:500], np.abs(fourier_wave[1:500]))
 plt.show()
