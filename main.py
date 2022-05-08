@@ -11,8 +11,7 @@ def main():
     text = "hello world"
 
     # Convert the text into a binary string
-    binary_data = data_conversion.text_to_bit_string(text)
-
+    binary_string = data_conversion.text_to_binary_string(text)
     # Convert the binary string into an array of integers
     data = data_conversion.bits_to_integers(binary_data, 4)
 

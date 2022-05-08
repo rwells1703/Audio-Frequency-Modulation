@@ -1,11 +1,12 @@
 # Convert text to a string of 1s and 0s (bit string)
-def text_to_bit_string(text):
-    bit_string = ""
+def text_to_binary_string(text):
+    binary_string = ""
 
     for t in text:
-        bit_string += format(ord(t), 'b')
+        binary_string += format(ord(t), '07b')
         
     return bit_string
+    return binary_string
 
 # Converts a string of bits to an array of integers representing them
 def bits_to_integers(bits, segment_bits):
