@@ -35,6 +35,30 @@ def bits_to_integers(bits, segment_bits):
 
     return integers
 
+# Convert integers to a string of bits
+def integers_to_bits(integers, segment_bits):
+    bits = ""
+    for i in integers:
+        bits += bin(i)[2:].zfill(segment_bits)
+    
+    return bits
+
+# Convert string of binary back to ascii
+def binary_string_to_text(binary_string):
+    text = ""
+    start = 0
+    end = 7
+
+    # Loop through the bits and convert sections to ascii value
+    while end <= len(binary_string):
+        binary_string_segment = binary_string[start:end]
+        text += chr(int(binary_string_segment, 2))
+        
+        start += 7
+        end += 7
+    
+    return text
+
 # Convert a bytestring of wav audio data to a list of integer values
 def raw_data_to_int(data):
     int_tuples = struct.iter_unpack("H", data)

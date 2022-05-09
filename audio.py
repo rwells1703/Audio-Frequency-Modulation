@@ -110,12 +110,22 @@ def extract_int_from_audio(data):
     return int_value
 
 # Interlace zeros between the integer values to symbolise the end of each symbol
-def add_stops_to_integers(data):
+def add_integers_stops(data):
     output = []
 
     for d in data:
         output.append(d)
         output.append(0)
+
+    return output
+
+# Remove interlaced zeros between the integer values to symbolise the end of each symbol
+def remove_integers_stops(data):
+    output = []
+
+    for i in data:
+        if i != 0:
+            output.append(i)
 
     return output
 
@@ -132,7 +142,7 @@ def add_to_int_stream(int_value, int_stream, int_stream_raw, sureness):
             # Record only if the previous character has not already been recorded
             if int_stream[-1] != int_value:
                 int_stream.append(int_value)
-                print(int_stream)
+                #print(int_stream)
         except IndexError:
             int_stream.append(int_value)
-            print(int_stream)
+            #print(int_stream)

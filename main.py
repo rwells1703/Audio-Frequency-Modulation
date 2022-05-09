@@ -8,17 +8,18 @@ import data_conversion
 import generic_shift_keying
 import waves
 
+SEGMENT_BITS = 4
+
 def send(text):
     pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
 
     # Convert the text into a binary string
     binary_string = data_conversion.text_to_binary_string(text)
-
+    
     # Convert the binary string into an array of integers
-    data = data_conversion.bits_to_integers(binary_string, 4)
+    data = data_conversion.bits_to_integers(binary_string, SEGMENT_BITS)
 
-    data = audio.add_stops_to_integers(data)
-    print(data)
+    data = audio.add_integers_stops(data)
 
     # Time segment between each modulation
     segment_time = 0.1
@@ -48,8 +49,8 @@ def send(text):
     plt.grid(axis = "y")
     plt.plot(time, wave)
 
-    #plt.show()
-    
+    plt.show()
+
     # Play the modulated wave as a sound
     audio.play_wave(stream_play, wave)
 
@@ -89,12 +90,14 @@ def receive():
     pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
 
     # How many consecutive samples should be identical before recording the value
-    sureness = 3
+    sureness = 5
 
-    int_stream_raw = [0] * sureness
+    int_stream_raw = [0] * (sureness)
     int_stream = []
     
     try:
+        text = ""
+
         while True:
             # Record a chunk of audio and get its integer value
             data = stream_record.read(audio.RECORDING_CHUNK_SIZE)
@@ -102,12 +105,22 @@ def receive():
 
             # Add this integer value to the log of data
             audio.add_to_int_stream(int_value, int_stream, int_stream_raw, sureness)
+
+            # Convert integer data back into text
+            int_stream_no_stops = audio.remove_integers_stops(int_stream)
+            binary_string = data_conversion.integers_to_bits(int_stream_no_stops, SEGMENT_BITS)
+
+            # Display the text when it changes
+            text_new = data_conversion.binary_string_to_text(binary_string)
+            if text_new != text:
+                text = text_new
+                print(text)
     except KeyboardInterrupt:
         audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
 
 if __name__ == "__main__":
     if argv[1] == "send":
-        send("hello")
+        send("helloworldhowareyou?")
     elif argv[1] == "receive":
         receive()
     elif argv[1] == "record":
