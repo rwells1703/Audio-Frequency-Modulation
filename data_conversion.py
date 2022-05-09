@@ -1,11 +1,13 @@
+import struct
+
 # Convert text to a string of 1s and 0s (bit string)
 def text_to_binary_string(text):
     binary_string = ""
 
     for t in text:
         binary_string += format(ord(t), '07b')
-        
-    return bit_string
+    
+    #print([binary_string[i:i+7] for i in range(0, len(binary_string), 7)])
     return binary_string
 
 # Converts a string of bits to an array of integers representing them
@@ -32,3 +34,10 @@ def bits_to_integers(bits, segment_bits):
         end += segment_bits
 
     return integers
+
+# Convert a bytestring of wav audio data to a list of integer values
+def raw_data_to_int(data):
+    int_tuples = struct.iter_unpack("H", data)
+    int_data = list(map(lambda t : t[0], int_tuples))
+
+    return int_data

@@ -1,11 +1,11 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-import utils
+import waves
 
 seconds = 1
 
-t = np.linspace(0,1,utils.SAMPLE_RATE)
+t = np.linspace(0,1,waves.SAMPLE_RATE)
 
 freq = 1.
 x = 3*np.sin(2*np.pi*freq*t)
@@ -16,7 +16,7 @@ x += np.sin(2*np.pi*freq*t)
 freq = 7
 x += 0.5* np.sin(2*np.pi*freq*t)
 
-freq, X = utils.generate_fourier_wave(x)
+freq, X = waves.generate_fourier_wave(x)
 
 plt.figure(figsize = (12, 6))
 
