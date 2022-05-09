@@ -127,7 +127,7 @@ def add_to_int_stream(int_value, int_stream, int_stream_raw, sureness):
         #print(int_value)
 
     # If the last few values were identical, it is usually deliberate so record it
-    if int_stream_raw[-sureness:] == [int_value]*sureness:
+    if int_stream_raw[-sureness*2:].count(int_value) >= sureness:
         try:
             # Record only if the previous character has not already been recorded
             if int_stream[-1] != int_value:

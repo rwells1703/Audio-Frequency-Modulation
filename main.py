@@ -21,7 +21,7 @@ def send(text):
     print(data)
 
     # Time segment between each modulation
-    segment_time = 0.2
+    segment_time = 0.1
     
     # Modulate the data
     wave = generic_shift_keying.shift_keying(data, segment_time)
@@ -48,7 +48,7 @@ def send(text):
     plt.grid(axis = "y")
     plt.plot(time, wave)
 
-    plt.show()
+    #plt.show()
     
     # Play the modulated wave as a sound
     audio.play_wave(stream_play, wave)
@@ -89,7 +89,7 @@ def receive():
     pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
 
     # How many consecutive samples should be identical before recording the value
-    sureness = 5
+    sureness = 3
 
     int_stream_raw = [0] * sureness
     int_stream = []
