@@ -1,10 +1,11 @@
 import numpy as np
+import struct
 
-import audio
+import constants
 
 # Generates a sine wave for a specified number of seconds
 def generate_wave(seconds, frequency, amplitude, phase):
-    time = np.linspace(0, seconds, np.ceil(seconds * audio.SAMPLE_RATE).astype(int), False)
+    time = np.linspace(0, seconds, np.ceil(seconds * constants.SAMPLE_RATE).astype(int), False)
     wave = np.sin(frequency * time * 2 * np.pi) * amplitude * phase
     return wave
 
@@ -14,7 +15,7 @@ def combine_waves(wave1, wave2):
 
 # Generate a time axis for a given amount of wave segments
 def generate_time_axis(segment_time, segment_count):
-    return np.linspace(0, segment_time*segment_count, (np.ceil(segment_time * audio.SAMPLE_RATE) * segment_count).astype(int), False)
+    return np.linspace(0, segment_time*segment_count, (np.ceil(segment_time * constants.SAMPLE_RATE) * segment_count).astype(int), False)
 
 # Convert the binary string into a digital wave
 def generate_digital_wave(binary_string):
@@ -40,18 +41,28 @@ def generate_square_wave(data, segment_time):
 
 # Generate a flat line signal
 def generate_flat_signal(amplitude, segment_time):
-    samples = np.ceil(segment_time * audio.SAMPLE_RATE).astype(int)
+    samples = np.ceil(segment_time * constants.SAMPLE_RATE).astype(int)
     flat_signal = np.full(samples, amplitude)
 
     return flat_signal
 
+# Splits wave into equally sized (apart from the final) chunks of the segment time
+def split_wave(wave, segment_time):
+    wave_chunk_size = segment_time * constants.SAMPLE_RATE
+    wave_split = np.array_split(wave, wave_chunk_size)
+
+    return wave_split
+
+# Convert a bytestring of wav audio data to a wave of integer values
+def bytestring_audio_to_wave(data):
+    int_tuples = struct.iter_unpack("H", data)
+    wave = list(map(lambda t : t[0], int_tuples))
+
+    return wave
+
 # Transform a wave into its frequency and fourier components
 def generate_fourier_wave(wave):
     fourier_wave = np.fft.fft(wave)
-
-    N = len(fourier_wave)
-    n = np.arange(N)
-    T = N/audio.SAMPLE_RATE
-    frequency = n/T
+    frequency = np.fft.fftfreq(len(wave))
     
     return frequency, fourier_wave
