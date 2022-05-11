@@ -1,5 +1,4 @@
 import numpy as np
-import struct
 
 import constants
 
@@ -13,9 +12,9 @@ def generate_wave(frequency, amplitude, phase, seconds=1):
 def combine_waves(wave1, wave2):
     return np.append(wave1, wave2)
 
-# Generate a time axis for a given amount of wave segments
-def generate_time_axis(segment_time, segment_count):
-    return np.linspace(0, segment_time*segment_count, (np.floor(segment_time * constants.SAMPLE_RATE) * segment_count).astype(int), False)
+# Generate a time axis for a wave
+def generate_time_axis(length, divisions):
+    return np.linspace(0, length, np.floor(divisions).astype(int), False)
 
 # Convert the binary string into a digital wave
 def generate_digital_wave(binary_string):

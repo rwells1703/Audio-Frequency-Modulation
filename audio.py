@@ -5,22 +5,29 @@ import time
 import constants
 import waves
 
-def start():
+# Initialise the audio streams
+def start(recording_block_size):
     stream_play = sd.OutputStream(
         samplerate=constants.SAMPLE_RATE,
-        channels=constants.AUDIO_CHANNELS)
+        channels=constants.CHANNELS)
 
     stream_record = sd.InputStream(
         samplerate=constants.SAMPLE_RATE,
-        channels=constants.AUDIO_CHANNELS,
-        dtype="int16",
-        blocksize=constants.RECORDING_BLOCK_SIZE)
+        channels=constants.CHANNELS,
+        dtype=constants.FORMAT_RECORD,
+        blocksize=recording_block_size)
 
     time.sleep(0.1)
     stream_record.start()
 
     return stream_play, stream_record
 
+# Reads the audio as a wave
+def read_wave(stream, recording_block_size):
+    wave = stream.read(recording_block_size)[0].flatten()
+
+    return wave
+    
 # Plays the wave as sound
 def play_wave(stream, wave):
     # Convert the wave to the correct format
@@ -34,12 +41,6 @@ def play_audio(stream, data):
     with stream:
         stream.write(data)
 
-# Reads the audio as a wave
-def read_audio(stream):
-    wave = stream.read(constants.RECORDING_BLOCK_SIZE)[0].flatten()
-
-    return wave
-
 # Records the microphone audio
 def record_audio(stream, seconds, log=True):
     if log:
@@ -50,7 +51,7 @@ def record_audio(stream, seconds, log=True):
     # Take the specified number of recording chunks
     for i in range(0, int(constants.SAMPLE_RATE / constants.RECORDING_BLOCK_SIZE * seconds)):
         # Write the frame to the data
-        wave = waves.combine_waves(wave, read_audio(stream))
+        wave = waves.combine_waves(wave, read_wave(stream))
 
     if log:
         print("Stopped recording")

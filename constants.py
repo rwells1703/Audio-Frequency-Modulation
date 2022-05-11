@@ -1,38 +1,39 @@
 import numpy as np
-import pyaudio
 
-SEGMENT_TIME = 0.2
-
-# Define pyaudio stream parameters
+# Define audio stream parameters
 SAMPLE_RATE = 48000
-FORMAT_PLAY = pyaudio.paFloat32
-FORMAT_RECORD = pyaudio.paInt16
-RECORDING_BLOCK_SIZE = int(SAMPLE_RATE * (SEGMENT_TIME / 8))
-AUDIO_CHANNELS = 1
-
-CHANNELS = [(1000,1200,3000), (1400,1600,3200), (1800, 2000, 3400), (2200, 2400, 3600)]
-
-# Define the number of bits used in various places
-SEGMENT_BITS = 1
-PLAY_BITS = 32
+CHANNELS = 1
+FORMAT_RECORD = "int16"
 RECORD_BITS = 16
 
+# Time taken for a single segment to play
+BFSK_SEGMENT_TIME = 0.2
+MFSK_SEGMENT_TIME = 0.2
 
+# The number of bits in a recorded audio block
+BFSK_RECORDING_BLOCK_SIZE = int(SAMPLE_RATE * (BFSK_SEGMENT_TIME / 8))
+MFSK_RECORDING_BLOCK_SIZE = 1024
+
+# Define the frequency channels for BFSK
+BFSK_CHANNELS = [(1000,1200,3000), (1400,1600,3200), (1800, 2000, 3400)]
+BFSK_CHANNEL_COUNT = len(BFSK_CHANNELS)
 
 # The proportion of values within a sample group (of CERTAINTY_SAMPLE_SIZE) that should be identical, before storing the value
-# e.g. 80% or more of the values in [1,1,1,9,1,2,1,1] should be equal to 1, otherwise the value will not be stored
-CERTAINTY = 5
-CERTAINTY_SAMPLE_SIZE = 10
+# e.g. 80% or more of the values in the sample should be equal to 1 (or perhaps [0,1,1] in BFSK), otherwise the value will not be stored
+BFSK_CERTAINTY = 5
+BFSK_CERTAINTY_SAMPLE_SIZE = 10
 
+MFSK_CERTAINTY = 6
+MFSK_CERTAINTY_SAMPLE_SIZE = 9
 
+# Define the number of bits per segment used for MFSK
+MFSK_SEGMENT_BITS = 7
 
 # Increments by the step at which recoreded frequencies are quantized
-RECORD_FREQ_STEP = SAMPLE_RATE/RECORDING_BLOCK_SIZE
+MFSK_RECORD_FREQ_STEP = SAMPLE_RATE/MFSK_RECORDING_BLOCK_SIZE
 
-# Full frequency spectrum values available from mic (from 0 to 44100 Hz)
-RECORD_FREQ_RANGE = np.arange(stop=SAMPLE_RATE, step=RECORD_FREQ_STEP)
-
-MIN_FREQ = 600
-MIN_FREQ = MIN_FREQ - (MIN_FREQ%RECORD_FREQ_STEP)
-MAX_FREQ = MIN_FREQ+RECORD_FREQ_STEP
-CLIPPED_FREQ_RANGE = np.arange(start=MIN_FREQ, stop=MAX_FREQ, step=RECORD_FREQ_STEP)
+# The frequency range used for MFSK
+MFSK_MIN_FREQ = 600
+MFSK_MIN_FREQ = MFSK_MIN_FREQ - (MFSK_MIN_FREQ%MFSK_RECORD_FREQ_STEP)
+MFSK_MAX_FREQ = MFSK_MIN_FREQ+(2**MFSK_SEGMENT_BITS)*MFSK_RECORD_FREQ_STEP
+MFSK_FREQ_RANGE = np.arange(start=MFSK_MIN_FREQ, stop=MFSK_MAX_FREQ, step=MFSK_RECORD_FREQ_STEP)

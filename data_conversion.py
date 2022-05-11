@@ -44,9 +44,9 @@ def pad_bits(bits, modulus, end=True):
 # Converts a string of bits to an array of integers representing them
 def bits_to_ints(bits):
     start = 0
-    end = constants.SEGMENT_BITS
+    end = constants.MFSK_SEGMENT_BITS
     
-    bits = pad_bits(bits, constants.SEGMENT_BITS)
+    bits = pad_bits(bits, constants.MFSK_SEGMENT_BITS)
 
     integers = []
 
@@ -55,8 +55,8 @@ def bits_to_ints(bits):
         bits_segment = bits[start:end]
         integers.append(int(bits_segment, 2))
         
-        start += constants.SEGMENT_BITS
-        end += constants.SEGMENT_BITS
+        start += constants.MFSK_SEGMENT_BITS
+        end += constants.MFSK_SEGMENT_BITS
 
     return integers
 
@@ -65,7 +65,7 @@ def ints_to_bits(int_stream):
     bits = ""
 
     for i in int_stream:
-        bits += bin(i)[2:].zfill(constants.SEGMENT_BITS)
+        bits += bin(i)[2:].zfill(constants.MFSK_SEGMENT_BITS)
     
     return bits
 
