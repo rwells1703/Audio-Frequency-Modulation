@@ -1,10 +1,15 @@
 from sys import argv
 
-import mfsk
+from bfsk import BFSK
 
-if __name__ == "__main__":
+def main():
+    fsk = BFSK()
+    
     if argv[1] == "send":
         message = input("Enter message> ")
-        mfsk.send(message)
+        fsk.send(message)
     elif argv[1] == "receive":
-        mfsk.receive()
+        fsk.receive()
+
+if __name__ == "__main__":
+    main()
