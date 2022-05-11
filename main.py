@@ -1,6 +1,8 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from sys import argv
+import time
+
 import audio
 import audio_file
 import constants
@@ -8,7 +10,7 @@ import data_conversion
 import shift_keying
 import waves
 
-def send(text):
+def send_old(text):
     pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
 
     # Convert the text into bits
@@ -54,7 +56,7 @@ def send(text):
 
     audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
 
-def receive():
+def receive_old():
     pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
 
     int_stream_raw = [0] * (constants.CERTAINTY_SAMPLE_SIZE)
@@ -67,7 +69,7 @@ def receive():
             data = stream_record.read(constants.RECORDING_CHUNK_SIZE)
 
             # Convert microphone audio data into a waveform
-            wave = waves.bytestring_audio_to_wave(data)
+            wave = np.frombuffer(data, dtype=np.int16)
 
             # Extract integer values from the audio wave
             int_value = shift_keying.wave_to_int(wave)
@@ -95,36 +97,120 @@ def receive():
     except KeyboardInterrupt:
         audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
 
+def record_and_save():
+    pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
+
+    data = audio.record_audio(stream_record, 2)
+    audio_file.save_audio_file(pyaudio_instance, data)
+
+    audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
+
 def record_and_fourier():
     pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
 
     data = audio.record_audio(stream_record, 5)
 
-    int_data = data_conversion.bytestring_audio_to_ints(data)
+    wave = np.frombuffer(data, dtype=np.int16)
 
-    audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
+    frequencies, fourier_wave = waves.generate_fourier_wave(wave)
 
-    freq, fourier_wave = waves.generate_fourier_wave(int_data)
-
-    freq_subset = freq[1:int(constants.SAMPLE_RATE/4)]
-    fourier_wave_subset = np.abs(fourier_wave)[1:int(constants.SAMPLE_RATE/4)]
-
-    freq_max = freq_subset[np.argmax(fourier_wave_subset)]
-    print(freq_max)
-
-    plt.plot(freq_subset, fourier_wave_subset)
+    plt.plot(frequencies, fourier_wave)
     plt.show()
 
-def record_and_save():
+    audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
+
+def play_frequencies():
     pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
 
-    data = audio.record_audio(stream_record, 5)
-    audio_file.save_audio_file(pyaudio_instance, data)
+    seconds = 5
+    w = waves.generate_flat_signal(0, seconds)
+
+    freqs = [400,500,800]
+
+    for f in freqs:
+        new_w = waves.generate_wave(f, 1, 1, seconds)
+        w = w + new_w
+
+    w /= len(freqs)
+
+    t = waves.generate_time_axis(seconds, 1)
+
+    plt.grid(axis = "y")
+    plt.plot(t, w)
+    #plt.show()
+
+    audio.play_wave(stream_play, w)
 
     audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
+
+def receive():
+    stream_play, stream_record = audio.start()
+
+    freq_max = 0
+    while True:
+        # Record a chunk of audio and get its integer value
+        data = audio.read_audio(stream_record)
+
+        wave = data.flatten()
+
+        frequencies, fourier_wave = waves.generate_fourier_wave(wave)
+
+        freq_max_prev = freq_max
+        freq_max = int(shift_keying.get_loudest_frequency(frequencies, fourier_wave))
+        #print(int(freq_max))
+
+        if (freq_max == 1000 and freq_max_prev == 600):
+            print("0")
+        elif (freq_max == 1000 and freq_max_prev == 800):
+            print("1")
+
+def send(text):
+    stream_play, stream_record = audio.start()
+
+    #data = "1000010010100010100101010000100001010111010000000100101011111110101000000101"*4
+    data = "10010101010100001010011111"
+    #data = "10"*20
+
+    wave = []
+
+    #carrier_wave = waves.generate_wave(660, 1, 1, seconds)
+    #wave += carrier_wave
+
+    low_wave = waves.generate_wave(600, 1, 1, constants.SEGMENT_TIME)
+    high_wave = waves.generate_wave(800, 1, 1, constants.SEGMENT_TIME)
+    end_wave = waves.generate_wave(1000, 1, 1, constants.SEGMENT_TIME)
+
+    data_wave = []
+    for d in data:
+        if d == "0":
+            data_wave_segment = low_wave
+        if d == "1":
+            data_wave_segment = high_wave
+        
+        data_wave = waves.combine_waves(data_wave, data_wave_segment)
+        data_wave = waves.combine_waves(data_wave, end_wave)
+
+    low_wave = waves.generate_wave(600, 1, 1, constants.SEGMENT_TIME)
+    high_wave = waves.generate_wave(800, 1, 1, constants.SEGMENT_TIME)
+    end_wave = waves.generate_wave(1000, 1, 1, constants.SEGMENT_TIME)
+    
+    wave = data_wave
+
+    t = waves.generate_time_axis(constants.SEGMENT_TIME, len(data)*2)
+    plt.grid(axis = "y")
+    plt.plot(t, wave)
+    #plt.show()
+
+    #wave /= len(freqs) + 1
+
+    audio.play_wave(stream_play, wave)
 
 if __name__ == "__main__":
     if argv[1] == "send":
         send("hello")
     elif argv[1] == "receive":
         receive()
+    elif argv[1] == "frequencies":
+        play_frequencies()
+    elif argv[1] == "fourier":
+        record_and_fourier()

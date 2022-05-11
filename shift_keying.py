@@ -49,12 +49,9 @@ def ints_to_wave(ints, segment_time):
 
 # Takes a chunk of audio data, and gets the integer value it corresponds to
 def wave_to_int(wave):
-    freq, fourier_wave = waves.generate_fourier_wave(wave)
+    frequencies, fourier_wave = waves.generate_fourier_wave(wave)
 
-    freq_subset = freq[1:]
-    fourier_wave_subset = np.abs(fourier_wave)[1:]
-
-    freq_max = abs(freq_subset[np.argmax(fourier_wave_subset)]*constants.SAMPLE_RATE)
+    freq_max = get_loudest_frequency(frequencies, fourier_wave)
 
     '''if clip_frequency(freq_max):
         return None'''
@@ -63,6 +60,10 @@ def wave_to_int(wave):
     #print(int_value, " = ", freq_max)
 
     return int_value
+
+# Returns the loudest frequency present from the fourier transform
+def get_loudest_frequency(frequencies, fourier_wave):
+    return frequencies[np.argmax(fourier_wave)]
 
 # Finds the correct integer data point for a given approximate frequency
 def match_frequency(frequency):
@@ -79,14 +80,6 @@ def match_frequency(frequency):
 
     # No integer value matches this frequency
     return None
-
-    '''differences = np.abs(frequencies - target)
-    smallest_difference_index = differences.argmin()
-
-    if (differences[smallest_difference_index] > constants.FREQ_TOLERANCE):
-        return None
-    
-    return smallest_difference_index'''
 
 # Iterate through an array of dictionaries, extracting a certain key value from each one into an output array
 # E.g. get "age" key, for an array of dictionaries representing people

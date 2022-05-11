@@ -1,51 +1,42 @@
 import numpy as np
-import pyaudio
+import sounddevice as sd
+import time
 
 import constants
 
-# Start the pyaudio library and a stream
-def start_pyaudio():
-    # Start pyaudio
-    pyaudio_instance = pyaudio.PyAudio()
+def start():
+    stream_play = sd.OutputStream(
+        samplerate=constants.SAMPLE_RATE,
+        channels=constants.CHANNELS)
 
-    # Create the stream for playing audio through the speakers
-    stream_play = pyaudio_instance.open(format=constants.FORMAT_PLAY,
-                    channels=constants.CHANNELS,
-                    rate=constants.SAMPLE_RATE,
-                    output=True)
+    stream_record = sd.InputStream(
+        samplerate=constants.SAMPLE_RATE,
+        channels=constants.CHANNELS,
+        dtype="int16",
+        blocksize=constants.RECORDING_BLOCK_SIZE)
 
-    # Create the stream for recording audio from the microphone     
-    stream_record = pyaudio_instance.open(format=constants.FORMAT_RECORD,
-                channels=constants.CHANNELS,
-                rate=constants.SAMPLE_RATE,
-                frames_per_buffer=constants.RECORDING_CHUNK_SIZE,
-                input=True)
+    time.sleep(0.1)
+    stream_record.start()
 
-    return pyaudio_instance, stream_play, stream_record
-
-# Stop the stream, and the pyaudio library
-def stop_pyaudio(pyaudio_instance, stream_play, stream_record):
-    # Close both playing and recoding streams
-    stream_play.stop_stream()
-    stream_play.close()
-
-    stream_record.stop_stream()
-    stream_record.close()
-
-    # Stop pyaudio
-    pyaudio_instance.terminate()
+    return stream_play, stream_record
 
 # Plays the wave as sound
 def play_wave(stream, wave):
     # Convert the wave to the correct format
-    wave = wave.astype(np.float32).tobytes()
+    data = wave.astype(np.float32)
 
     # Write the data to the playback stream
-    stream.write(wave)
+    play_audio(stream, data)
 
 # Plays audio data as bytes
 def play_audio(stream, data):
-    stream.write(data)
+    with stream:
+        stream.write(data)
+
+def read_audio(stream):
+    data = stream.read(constants.RECORDING_BLOCK_SIZE)[0]
+
+    return data
 
 # Records the microphone input as a wave and outputs the data as bytes
 def record_audio(stream, seconds, log=True):
@@ -55,9 +46,10 @@ def record_audio(stream, seconds, log=True):
     data = b''
 
     # Take the specified number of recording chunks
-    for i in range(0, int(constants.SAMPLE_RATE / constants.RECORDING_CHUNK_SIZE * seconds)):
+    for i in range(0, int(constants.SAMPLE_RATE / constants.RECORDING_BLOCK_SIZE * seconds)):
         # Read the audio frame from the stream
-        frame = stream.read(constants.RECORDING_CHUNK_SIZE)
+        with stream:
+            frame = stream.read(constants.RECORDING_BLOCK_SIZE)
         # Write the frame to frame list
         data += frame
 
