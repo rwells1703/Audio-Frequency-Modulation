@@ -1,5 +1,3 @@
-import constants
-
 # Convert text to a string of 1s and 0s (bit string)
 def text_to_bits(text):
     bits = ""

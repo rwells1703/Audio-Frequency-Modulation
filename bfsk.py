@@ -1,17 +1,31 @@
 import numpy as np
 
 import audio
-import constants
 import data_conversion
 import shift_keying
 import waves
 
 class BFSK:
+    # Time taken for a single segment to play (a segment is c bits, where c is the number of channels) 
+    SEGMENT_TIME = 0.2
+
+    # The number of bits in a recorded audio block (based upon segment time)
+    RECORDING_BLOCK_SIZE = int(audio.SAMPLE_RATE * (SEGMENT_TIME / 8))
+
+    # The proportion of segments within a sample group that should be identical, before storing the segment
+    # e.g. 3 out of 6 segment should be equal to 101011 otherwise the segment will not be stored
+    CERTAINTY = 5
+    CERTAINTY_SAMPLE_SIZE = 10
+
+    # The frequency channels used for transmission
+    CHANNELS = [(1000, 1200, 3000), (1400, 1600, 3200), (1800, 2000, 3400)]
+    CHANNEL_COUNT = len(CHANNELS)
+
     def send(self, text):
-        stream_play, stream_record = audio.start(constants.BFSK_RECORDING_BLOCK_SIZE)
+        stream_play, stream_record = audio.start(BFSK.RECORDING_BLOCK_SIZE)
 
         bits = data_conversion.text_to_bits(text)
-        bits = data_conversion.pad_bits(bits, constants.BFSK_CHANNEL_COUNT)
+        bits = data_conversion.pad_bits(bits, BFSK.CHANNEL_COUNT)
 
         wave = []
 
@@ -21,16 +35,16 @@ class BFSK:
             wave_gap_segment = []
 
             channel = 0
-            while channel < constants.BFSK_CHANNEL_COUNT:
-                low_wave = waves.generate_wave(constants.BFSK_CHANNELS[channel][0], 1, 1, constants.BFSK_SEGMENT_TIME)
-                high_wave = waves.generate_wave(constants.BFSK_CHANNELS[channel][1], 1, 1, constants.BFSK_SEGMENT_TIME)
+            while channel < BFSK.CHANNEL_COUNT:
+                low_wave = waves.generate_wave(BFSK.CHANNELS[channel][0], 1, 1, BFSK.SEGMENT_TIME)
+                high_wave = waves.generate_wave(BFSK.CHANNELS[channel][1], 1, 1, BFSK.SEGMENT_TIME)
 
                 if bits[l+channel] == "0":
                     wave_segment_addition = low_wave
                 if bits[l+channel] == "1":
                     wave_segment_addition = high_wave
 
-                wave_gap_addition = waves.generate_wave(constants.BFSK_CHANNELS[channel][2], 1, 1, constants.BFSK_SEGMENT_TIME)
+                wave_gap_addition = waves.generate_wave(BFSK.CHANNELS[channel][2], 1, 1, BFSK.SEGMENT_TIME)
 
                 # If there is no current data segment (or gap segment)
                 if channel == 0:
@@ -42,18 +56,18 @@ class BFSK:
 
                 channel += 1
 
-            wave_gap_segment /= constants.BFSK_CHANNEL_COUNT
+            wave_gap_segment /= BFSK.CHANNEL_COUNT
             wave = waves.combine_waves(wave, wave_gap_segment)
 
-            wave_data_segment /= constants.BFSK_CHANNEL_COUNT
+            wave_data_segment /= BFSK.CHANNEL_COUNT
             wave = waves.combine_waves(wave, wave_data_segment)
 
-            l += constants.BFSK_CHANNEL_COUNT
+            l += BFSK.CHANNEL_COUNT
 
         audio.play_wave(stream_play, wave)
 
     def receive(self):
-        stream_play, stream_record = audio.start(constants.BFSK_RECORDING_BLOCK_SIZE)
+        stream_play, stream_record = audio.start(BFSK.RECORDING_BLOCK_SIZE)
 
         data_stream_raw = []
         data_stream = []
@@ -61,15 +75,15 @@ class BFSK:
 
         while True:
             # Record a chunk of audio and get its waveform
-            wave = audio.read_wave(stream_record, constants.BFSK_RECORDING_BLOCK_SIZE)
+            wave = audio.read_wave(stream_record, BFSK.RECORDING_BLOCK_SIZE)
 
             frequencies, fourier_wave = waves.generate_fourier_wave(wave)
 
-            freqs_max = self.get_loudest_frequencies(frequencies, fourier_wave, constants.BFSK_CHANNEL_COUNT)
+            freqs_max = self.get_loudest_frequencies(frequencies, fourier_wave, BFSK.CHANNEL_COUNT)
 
-            data = [None,]*constants.BFSK_CHANNEL_COUNT
+            data = [None,] * BFSK.CHANNEL_COUNT
 
-            for i, channel in enumerate(constants.BFSK_CHANNELS):
+            for i, channel in enumerate(BFSK.CHANNELS):
                 if channel[0] in freqs_max:
                     data[i] = 0
                 if channel[1] in freqs_max:
@@ -80,7 +94,7 @@ class BFSK:
             if not None in data:
                 data_stream_raw.append(data)
 
-                if shift_keying.check_sent_deliberately(data, data_stream_raw, constants.BFSK_CERTAINTY, constants.BFSK_CERTAINTY_SAMPLE_SIZE) and shift_keying.check_not_added(data, data_stream):
+                if shift_keying.check_sent_deliberately(data, data_stream_raw, BFSK.CERTAINTY, BFSK.CERTAINTY_SAMPLE_SIZE) and shift_keying.check_not_added(data, data_stream):
                     data_stream.append(data)
 
             bits = np.array(data_stream).flatten()

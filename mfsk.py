@@ -2,14 +2,36 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import audio
-import constants
 import data_conversion
 import shift_keying
 import waves
 
 class MFSK:
+    # Time taken for a single segment to play
+    SEGMENT_TIME = 0.2
+
+    # The number of bits in a recorded audio block
+    RECORDING_BLOCK_SIZE = 1024
+
+    # The proportion of segments within a sample group that should be identical, before storing the segment
+    # e.g. 3 out of 6 segment should be equal to 1 otherwise the segment will not be stored
+    CERTAINTY = 6
+    CERTAINTY_SAMPLE_SIZE = 9
+
+    # The number of bits per segment
+    SEGMENT_BITS = 7
+
+    # Increments by the step at which recoreded frequencies are quantized
+    RECORD_FREQ_STEP = audio.SAMPLE_RATE / RECORDING_BLOCK_SIZE
+
+    # The range of frequency quantizations used
+    MIN_FREQ = 600
+    MIN_FREQ = MIN_FREQ - (MIN_FREQ % RECORD_FREQ_STEP)
+    MAX_FREQ = MIN_FREQ + (2**SEGMENT_BITS) * RECORD_FREQ_STEP
+    FREQ_RANGE = np.arange(start=MIN_FREQ, stop=MAX_FREQ, step=RECORD_FREQ_STEP)
+
     def send(self, text):
-        stream_play, stream_record = audio.start(constants.MFSK_RECORDING_BLOCK_SIZE)
+        stream_play, stream_record = audio.start(MFSK.RECORDING_BLOCK_SIZE)
 
         # Convert the text into bits
         bits = data_conversion.text_to_bits(text)
@@ -28,15 +50,15 @@ class MFSK:
         audio.play_wave(stream_play, wave)
 
     def receive(self):
-        stream_play, stream_record = audio.start(constants.MFSK_RECORDING_BLOCK_SIZE)
+        stream_play, stream_record = audio.start(MFSK.RECORDING_BLOCK_SIZE)
 
-        int_stream_raw = [0] * (constants.MFSK_CERTAINTY_SAMPLE_SIZE)
+        int_stream_raw = [0] * (MFSK.CERTAINTY_SAMPLE_SIZE)
         int_stream = []
         text = ""
 
         while True:
             # Record a chunk of audio and get its waveform
-            wave = audio.read_wave(stream_record, constants.MFSK_RECORDING_BLOCK_SIZE)
+            wave = audio.read_wave(stream_record, MFSK.RECORDING_BLOCK_SIZE)
 
             # Extract integer values from the audio wave
             int_value = self.wave_to_int(wave)
@@ -46,7 +68,7 @@ class MFSK:
                 int_stream_raw.append(int_value)
 
             # Add the value to the stream of verified values
-            if shift_keying.check_sent_deliberately(int_value, int_stream_raw, constants.MFSK_CERTAINTY, constants.MFSK_CERTAINTY_SAMPLE_SIZE) and shift_keying.check_not_added(int_value, int_stream):
+            if shift_keying.check_sent_deliberately(int_value, int_stream_raw, MFSK.CERTAINTY, MFSK.CERTAINTY_SAMPLE_SIZE) and shift_keying.check_not_added(int_value, int_stream):
                 int_stream.append(int_value)
 
             # Convert list of integers back into text
@@ -65,9 +87,9 @@ class MFSK:
     # Converts a string of bits to an array of integers representing them
     def bits_to_ints(self, bits):
         start = 0
-        end = constants.MFSK_SEGMENT_BITS
+        end = MFSK.SEGMENT_BITS
         
-        bits = data_conversion.pad_bits(bits, constants.MFSK_SEGMENT_BITS)
+        bits = data_conversion.pad_bits(bits, MFSK.SEGMENT_BITS)
 
         integers = []
 
@@ -76,8 +98,8 @@ class MFSK:
             bits_segment = bits[start:end]
             integers.append(int(bits_segment, 2))
             
-            start += constants.MFSK_SEGMENT_BITS
-            end += constants.MFSK_SEGMENT_BITS
+            start += MFSK.SEGMENT_BITS
+            end += MFSK.SEGMENT_BITS
 
         return integers
 
@@ -86,7 +108,7 @@ class MFSK:
         bits = ""
 
         for i in int_stream:
-            bits += bin(i)[2:].zfill(constants.MFSK_SEGMENT_BITS)
+            bits += bin(i)[2:].zfill(MFSK.SEGMENT_BITS)
         
         return bits
 
@@ -117,10 +139,10 @@ class MFSK:
         # Loop through the input data
         for i in ints:
             # Get frequency values for that section of wave
-            frequency = constants.MFSK_FREQ_RANGE[i]
+            frequency = MFSK.FREQ_RANGE[i]
 
             # Generate that section of wave and append it to the overall wave
-            wave_segment = waves.generate_wave(frequency, 1, 1, constants.MFSK_SEGMENT_TIME)
+            wave_segment = waves.generate_wave(frequency, 1, 1, MFSK.SEGMENT_TIME)
             wave = waves.combine_waves(wave, wave_segment)
 
         return wave
@@ -140,7 +162,7 @@ class MFSK:
 
     # Rejects any frequency higher or lower than the clipping bounds
     def clip_frequency(self, frequency):
-        if frequency > constants.MFSK_MAX_FREQ or frequency < constants.MFSK_MIN_FREQ:
+        if frequency > MFSK.MAX_FREQ or frequency < MFSK.MIN_FREQ:
             return True
 
         return False
@@ -148,7 +170,7 @@ class MFSK:
     # Finds the correct integer data point for a given approximate frequency
     def match_frequency(self, frequency):
         # Get the corresponding integer value for that frequency
-        int_values_matched = np.where(constants.MFSK_FREQ_RANGE == frequency)[0]
+        int_values_matched = np.where(MFSK.FREQ_RANGE == frequency)[0]
         if len(int_values_matched) > 0:
             return int_values_matched[0]
 
@@ -162,18 +184,18 @@ class MFSK:
     # Plot the waves on a pyplot graph
     def plot_sent_waves(self, bits, int_stream, int_stream_gaps, wave):
         # Generate a time axis for the modulated audio wave
-        wave_time = waves.generate_time_axis(len(wave) / constants.SAMPLE_RATE, len(wave))
+        wave_time = waves.generate_time_axis(len(wave) / audio.SAMPLE_RATE, len(wave))
 
         # Convert the binary string into a digital wave
         digital_wave = waves.generate_digital_wave(bits)
 
         # Turn the data into a square signal wave
-        square_wave = waves.generate_square_wave(int_stream, constants.MFSK_SEGMENT_TIME)
-        square_wave_time = waves.generate_time_axis(len(int_stream) * constants.MFSK_SEGMENT_TIME, len(int_stream) * constants.MFSK_SEGMENT_TIME * constants.SAMPLE_RATE)
+        square_wave = waves.generate_square_wave(int_stream, MFSK.SEGMENT_TIME)
+        square_wave_time = waves.generate_time_axis(len(int_stream) * MFSK.SEGMENT_TIME, len(int_stream) * MFSK.SEGMENT_TIME * audio.SAMPLE_RATE)
 
         # Turn the data into a square signal wave
-        square_wave_gapped = waves.generate_square_wave(int_stream_gaps, constants.MFSK_SEGMENT_TIME)
-        square_wave_gapped_time = waves.generate_time_axis(len(int_stream_gaps) * constants.MFSK_SEGMENT_TIME, len(int_stream_gaps) * constants.MFSK_SEGMENT_TIME * constants.SAMPLE_RATE)
+        square_wave_gapped = waves.generate_square_wave(int_stream_gaps, MFSK.SEGMENT_TIME)
+        square_wave_gapped_time = waves.generate_time_axis(len(int_stream_gaps) * MFSK.SEGMENT_TIME, len(int_stream_gaps) * MFSK.SEGMENT_TIME * audio.SAMPLE_RATE)
 
         # Plot the waves on a graph
         plt.subplot(4,1,1)

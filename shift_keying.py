@@ -1,5 +1,3 @@
-import numpy as np
-
 # Check to see if a detected value has been detected a several times recently
 # if it is recurring, store it as it is probably being deliberately sent
 def check_sent_deliberately(int_value, int_stream_raw, certainty, certainy_sample_size):
