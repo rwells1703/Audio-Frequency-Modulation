@@ -27,13 +27,16 @@ def bits_to_text(bits):
     
     return text
 
-def pad_bits(bits, modulus):
-    # Zero pad the data to a size that is a multiple of the segment bits
+# Zero pad the data to a size that is a multiple of the modulus
+def pad_bits(bits, modulus, end=True):
     leftover_bits = len(bits) % modulus
 
     # If there are leftover bits, pad the end
     if leftover_bits != 0:
         padding = modulus - leftover_bits
+        if end:
+            bits = bits + "0"*(padding)
+        else:
             bits = "0"*(padding) + bits
     
     return bits
