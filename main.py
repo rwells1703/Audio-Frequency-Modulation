@@ -145,8 +145,8 @@ def receive():
 
     data_stream_raw = []
     data_stream = []
-    x = 0
-    freqs_max = (0,)*len(constants.CHANNELS)
+    previous_text = ""
+
     try:
         while True:
             # Record a chunk of audio and get its integer value
@@ -155,8 +155,6 @@ def receive():
             frequencies, fourier_wave = waves.generate_fourier_wave(wave)
 
             freqs_max = shift_keying.get_loudest_frequencies(frequencies, fourier_wave, len(constants.CHANNELS))
-            
-            #print(freqs_max)
 
             data = [None,]*len(constants.CHANNELS)
 
@@ -169,38 +167,33 @@ def receive():
                     data[i] = 9
             
             if not None in data:
-                #print(freqs_max)
-                #print(x, ": ", data)
-                x += len(constants.CHANNELS)
                 data_stream_raw.append(data)
-                #print(data)
 
                 if shift_keying.check_sent_deliberately(data, data_stream_raw) and shift_keying.check_not_added(data, data_stream):
                     data_stream.append(data)
-                    print(data_stream)
+
+            bits = np.array(data_stream).flatten()
+            bit_string = "".join([str(x) for x in bits])
+            bit_string = bit_string.replace("9","")
+            text = data_conversion.bits_to_text(bit_string)
+
+            if previous_text != text:
+                print(text)
+                previous_text = text
 
     except KeyboardInterrupt:
-        bits = np.array(data_stream).flatten()
-        bit_string = "".join([str(x) for x in bits])
-        bit_string = bit_string.replace("9","")
-        print(bit_string)
-        if bit_string == data_conversion.pad_bits("111100101010101000010101111", len(constants.CHANNELS)):
-            print("SAME")
+        exit()
 
 def send(text):
     stream_play, stream_record = audio.start()
 
-    data = "111100101010101000010101111"
-    data = data_conversion.pad_bits(data, len(constants.CHANNELS))
-
-    for i, d in enumerate(data):
-        print(i, ":", d)
-    print(data)
+    bits = data_conversion.text_to_bits(text)
+    bits = data_conversion.pad_bits(bits, len(constants.CHANNELS))
 
     wave = []
 
     l = 0
-    while l < len(data):
+    while l < len(bits):
         wave_data_segment = []
         wave_gap_segment = []
 
@@ -209,9 +202,9 @@ def send(text):
             low_wave = waves.generate_wave(constants.CHANNELS[channel][0], 1, 1, constants.SEGMENT_TIME)
             high_wave = waves.generate_wave(constants.CHANNELS[channel][1], 1, 1, constants.SEGMENT_TIME)
 
-            if data[l+channel] == "0":
+            if bits[l+channel] == "0":
                 wave_segment_addition = low_wave
-            if data[l+channel] == "1":
+            if bits[l+channel] == "1":
                 wave_segment_addition = high_wave
 
             wave_gap_addition = waves.generate_wave(constants.CHANNELS[channel][2], 1, 1, constants.SEGMENT_TIME)
@@ -233,17 +226,13 @@ def send(text):
         wave = waves.combine_waves(wave, wave_data_segment)
 
         l += len(constants.CHANNELS)
-        
-    #t = waves.generate_time_axis(constants.SEGMENT_TIME, len(wave))
-    #plt.grid(axis = "y")
-    #plt.plot(t, wave)
-    #plt.show()
 
     audio.play_wave(stream_play, wave)
 
 if __name__ == "__main__":
     if argv[1] == "send":
-        send("hello")
+        message = input("Enter message> ")
+        send(message)
     elif argv[1] == "receive":
         receive()
     elif argv[1] == "frequencies":

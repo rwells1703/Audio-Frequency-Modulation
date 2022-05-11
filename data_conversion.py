@@ -11,6 +11,22 @@ def text_to_bits(text):
     return bits
 
 
+# Convert string of binary back to ascii
+def bits_to_text(bits):
+    text = ""
+    start = 0
+    end = 7
+
+    # Loop through the bits and convert sections to ascii value
+    while end <= len(bits):
+        bits_segment = bits[start:end]
+        text += chr(int(bits_segment, 2))
+        
+        start += 7
+        end += 7
+    
+    return text
+
 def pad_bits(bits, modulus):
     # Zero pad the data to a size that is a multiple of the segment bits
     leftover_bits = len(bits) % modulus
@@ -18,7 +34,7 @@ def pad_bits(bits, modulus):
     # If there are leftover bits, pad the end
     if leftover_bits != 0:
         padding = modulus - leftover_bits
-        bits = "0"*(padding) + bits
+            bits = "0"*(padding) + bits
     
     return bits
 
@@ -49,22 +65,6 @@ def ints_to_bits(int_stream):
         bits += bin(i)[2:].zfill(constants.SEGMENT_BITS)
     
     return bits
-
-# Convert string of binary back to ascii
-def bits_to_text(bits):
-    text = ""
-    start = 0
-    end = 7
-
-    # Loop through the bits and convert sections to ascii value
-    while end <= len(bits):
-        bits_segment = bits[start:end]
-        text += chr(int(bits_segment, 2))
-        
-        start += 7
-        end += 7
-    
-    return text
 
 # Interlace zeros between the integer values to symbolise the end of each symbol
 def add_ints_gaps(int_stream):
