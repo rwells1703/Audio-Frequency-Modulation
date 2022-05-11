@@ -1,4 +1,3 @@
-from re import I
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -9,9 +8,6 @@ import shift_keying
 import waves
 
 class MFSK:
-    def __init__(self):
-        pass
-
     def send(self, text):
         stream_play, stream_record = audio.start(constants.MFSK_RECORDING_BLOCK_SIZE)
 
@@ -19,8 +15,8 @@ class MFSK:
         bits = data_conversion.text_to_bits(text)
 
         # Convert the bits into an array of integers
-        int_stream = data_conversion.bits_to_ints(bits)
-        int_stream_gaps = data_conversion.add_ints_gaps(int_stream)
+        int_stream = self.bits_to_ints(bits)
+        int_stream_gaps = self.add_ints_gaps(int_stream)
         
         # Modulate the data
         wave = self.ints_to_wave(int_stream_gaps)
@@ -54,10 +50,10 @@ class MFSK:
                 int_stream.append(int_value)
 
             # Convert list of integers back into text
-            int_stream_no_gaps = data_conversion.remove_ints_gaps(int_stream)
+            int_stream_no_gaps = self.remove_ints_gaps(int_stream)
 
             # Convert the int stream to bits
-            bits = data_conversion.ints_to_bits(int_stream_no_gaps)
+            bits = self.ints_to_bits(int_stream_no_gaps)
 
             # Display the text when it changes
             text_new = data_conversion.bits_to_text(bits)
@@ -66,6 +62,53 @@ class MFSK:
                 text = text_new
                 print(text)
 
+    # Converts a string of bits to an array of integers representing them
+    def bits_to_ints(self, bits):
+        start = 0
+        end = constants.MFSK_SEGMENT_BITS
+        
+        bits = data_conversion.pad_bits(bits, constants.MFSK_SEGMENT_BITS)
+
+        integers = []
+
+        # Loop through the bits and convert sections to an integer
+        while end <= len(bits):
+            bits_segment = bits[start:end]
+            integers.append(int(bits_segment, 2))
+            
+            start += constants.MFSK_SEGMENT_BITS
+            end += constants.MFSK_SEGMENT_BITS
+
+        return integers
+
+    # Convert integers to a string of bits
+    def ints_to_bits(self, int_stream):
+        bits = ""
+
+        for i in int_stream:
+            bits += bin(i)[2:].zfill(constants.MFSK_SEGMENT_BITS)
+        
+        return bits
+
+    # Interlace zeros between the integer values to symbolise the end of each symbol
+    def add_ints_gaps(self, int_stream):
+        output = []
+
+        for i in int_stream:
+            output.append(i)
+            output.append(0)
+
+        return output
+
+    # Remove interlaced zeros between the integer values to symbolise the end of each symbol
+    def remove_ints_gaps(self, int_stream):
+        output = []
+
+        for i in int_stream:
+            if i != 0:
+                output.append(i)
+
+        return output
 
     # Performs shift keying on amplitude, frequency and phase concurrently
     def ints_to_wave(self, ints):
