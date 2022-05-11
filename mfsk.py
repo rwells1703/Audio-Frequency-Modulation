@@ -52,6 +52,7 @@ class MFSK:
     def receive(self):
         stream_play, stream_record = audio.start(MFSK.RECORDING_BLOCK_SIZE)
 
+        # Buffers storing
         int_stream_raw = [0] * (MFSK.CERTAINTY_SAMPLE_SIZE)
         int_stream = []
         text = ""

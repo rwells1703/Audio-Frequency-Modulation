@@ -1,10 +1,9 @@
 from sys import argv
 
 from bfsk import BFSK
-from mfsk import MFSK
 
 def main():
-    fsk = MFSK()
+    fsk = BFSK()
     
     if argv[1] == "send":
         message = input("Enter message> ")
