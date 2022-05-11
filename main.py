@@ -146,59 +146,82 @@ def play_frequencies():
 def receive():
     stream_play, stream_record = audio.start()
 
-    freq_max = 0
-    while True:
-        # Record a chunk of audio and get its integer value
-        data = audio.read_audio(stream_record)
+    x = 0
+    freqs_max = (0,)*len(constants.CHANNELS)
+    try:
+        while True:
+            # Record a chunk of audio and get its integer value
+            data = audio.read_audio(stream_record)
 
-        wave = data.flatten()
+            wave = data.flatten()
 
-        frequencies, fourier_wave = waves.generate_fourier_wave(wave)
+            frequencies, fourier_wave = waves.generate_fourier_wave(wave)
 
-        freq_max_prev = freq_max
-        freq_max = int(shift_keying.get_loudest_frequency(frequencies, fourier_wave))
-        #print(int(freq_max))
+            #freq_max = int(shift_keying.get_loudest_frequency(frequencies, fourier_wave))
+            freqs_max_prev = freqs_max
+            freqs_max = shift_keying.get_loudest_frequencies(frequencies, fourier_wave, len(constants.CHANNELS))
+            #print(freqs_max)
 
-        if (freq_max == 1000 and freq_max_prev == 600):
-            print("0")
-        elif (freq_max == 1000 and freq_max_prev == 800):
-            print("1")
+            for i, channel in enumerate(constants.CHANNELS):
+                if (freqs_max[i] == channel[0] and freqs_max_prev[i] == channel[2]):
+                    print(x, ": 0")
+                    x += 1
+                elif (freqs_max[i] == channel[1] and freqs_max_prev[i] == channel[2]):
+                    print(x, ": 1")
+                    x += 1
+
+    except KeyboardInterrupt:
+        print()
 
 def send(text):
     stream_play, stream_record = audio.start()
 
-    #data = "1000010010100010100101010000100001010111010000000100101011111110101000000101"*4
-    data = "10010101010100001010011111"
+    #data = "100000000000000000100101000101001010100001000010101110100000001001010111111101010000101"
+    data = "111100101010101000010101111"
     #data = "10"*20
+    data = data_conversion.pad_bits(data, len(constants.CHANNELS))
+    print(data)
 
     wave = []
 
-    #carrier_wave = waves.generate_wave(660, 1, 1, seconds)
-    #wave += carrier_wave
+    l = 0
+    while l < len(data):
+        wave_data_segment = []
+        wave_gap_segment = []
 
-    low_wave = waves.generate_wave(600, 1, 1, constants.SEGMENT_TIME)
-    high_wave = waves.generate_wave(800, 1, 1, constants.SEGMENT_TIME)
-    end_wave = waves.generate_wave(1000, 1, 1, constants.SEGMENT_TIME)
+        channel = 0
+        while channel < len(constants.CHANNELS):
+            low_wave = waves.generate_wave(constants.CHANNELS[channel][0], 1, 1, constants.SEGMENT_TIME)
+            high_wave = waves.generate_wave(constants.CHANNELS[channel][1], 1, 1, constants.SEGMENT_TIME)
 
-    data_wave = []
-    for d in data:
-        if d == "0":
-            data_wave_segment = low_wave
-        if d == "1":
-            data_wave_segment = high_wave
+            if data[l+channel] == "0":
+                wave_segment_addition = low_wave
+            if data[l+channel] == "1":
+                wave_segment_addition = high_wave
+
+            wave_gap_addition = waves.generate_wave(constants.CHANNELS[channel][2], 1, 1, constants.SEGMENT_TIME)
+
+            # If there is no current data segment (or gap segment)
+            if channel == 0:
+                wave_data_segment = wave_segment_addition
+                wave_gap_segment = wave_gap_addition
+            else:
+                wave_data_segment += wave_segment_addition
+                wave_gap_segment += wave_gap_addition
+
+            channel += 1
+
+        wave_gap_segment /= len(constants.CHANNELS)
+        wave = waves.combine_waves(wave, wave_gap_segment)
+
+        wave_data_segment /= len(constants.CHANNELS)
+        wave = waves.combine_waves(wave, wave_data_segment)
+
+        l += len(constants.CHANNELS)
         
-        data_wave = waves.combine_waves(data_wave, data_wave_segment)
-        data_wave = waves.combine_waves(data_wave, end_wave)
-
-    low_wave = waves.generate_wave(600, 1, 1, constants.SEGMENT_TIME)
-    high_wave = waves.generate_wave(800, 1, 1, constants.SEGMENT_TIME)
-    end_wave = waves.generate_wave(1000, 1, 1, constants.SEGMENT_TIME)
-    
-    wave = data_wave
-
-    t = waves.generate_time_axis(constants.SEGMENT_TIME, len(data)*2)
-    plt.grid(axis = "y")
-    plt.plot(t, wave)
+    #t = waves.generate_time_axis(constants.SEGMENT_TIME, len(wave))
+    #plt.grid(axis = "y")
+    #plt.plot(t, wave)
     #plt.show()
 
     #wave /= len(freqs) + 1

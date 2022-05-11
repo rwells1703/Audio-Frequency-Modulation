@@ -7,11 +7,11 @@ import constants
 def start():
     stream_play = sd.OutputStream(
         samplerate=constants.SAMPLE_RATE,
-        channels=constants.CHANNELS)
+        channels=constants.AUDIO_CHANNELS)
 
     stream_record = sd.InputStream(
         samplerate=constants.SAMPLE_RATE,
-        channels=constants.CHANNELS,
+        channels=constants.AUDIO_CHANNELS,
         dtype="int16",
         blocksize=constants.RECORDING_BLOCK_SIZE)
 

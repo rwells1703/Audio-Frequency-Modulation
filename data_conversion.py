@@ -10,18 +10,24 @@ def text_to_bits(text):
     #print([bits[i:i+7] for i in range(0, len(bits), 7)])
     return bits
 
+
+def pad_bits(bits, modulus):
+    # Zero pad the data to a size that is a multiple of the segment bits
+    leftover_bits = len(bits) % modulus
+
+    # If there are leftover bits, pad the end
+    if leftover_bits != 0:
+        padding = modulus - leftover_bits
+        bits += "0"*(padding)
+    
+    return bits
+
 # Converts a string of bits to an array of integers representing them
 def bits_to_ints(bits):
     start = 0
     end = constants.SEGMENT_BITS
     
-    # Zero pad the data to a size that is a multiple of the segment bits
-    leftover_bits = len(bits) % constants.SEGMENT_BITS
-
-    # If there are leftover bits, pad the end
-    if leftover_bits != 0:
-        padding = constants.SEGMENT_BITS - leftover_bits
-        bits += "0"*(padding)
+    bits = pad_bits(bits, constants.SEGMENT_BITS)
 
     integers = []
 

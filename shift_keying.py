@@ -65,6 +65,9 @@ def wave_to_int(wave):
 def get_loudest_frequency(frequencies, fourier_wave):
     return frequencies[np.argmax(fourier_wave)]
 
+def get_loudest_frequencies(frequencies, fourier_wave, n):
+    return np.sort(frequencies[np.argpartition(fourier_wave, -n)[-n:]]).astype(int)
+
 # Finds the correct integer data point for a given approximate frequency
 def match_frequency(frequency):
     # Generate a list of shift key values
