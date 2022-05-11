@@ -18,7 +18,7 @@ def pad_bits(bits, modulus):
     # If there are leftover bits, pad the end
     if leftover_bits != 0:
         padding = modulus - leftover_bits
-        bits += "0"*(padding)
+        bits = "0"*(padding) + bits
     
     return bits
 
