@@ -66,7 +66,23 @@ def get_loudest_frequency(frequencies, fourier_wave):
     return frequencies[np.argmax(fourier_wave)]
 
 def get_loudest_frequencies(frequencies, fourier_wave, n):
-    return np.sort(frequencies[np.argpartition(fourier_wave, -n)[-n:]]).astype(int)
+    #loudest_inds = np.flip(np.argpartition(fourier_wave, -n*15)[-n*15:])
+    sorted_inds = np.argsort(fourier_wave)
+    sorted_freqs = np.flip(frequencies[sorted_inds].astype(int))
+
+    rounded_freqs = list(map(lambda f : 100*round(f/100), sorted_freqs))
+
+    unique_freqs = []
+    i = 0
+    c = n
+    while i < len(rounded_freqs) and c > 0:
+        if not rounded_freqs[i] in unique_freqs:
+            unique_freqs.append(rounded_freqs[i])
+            c -= 1
+        i += 1
+
+    return unique_freqs
+
 
 # Finds the correct integer data point for a given approximate frequency
 def match_frequency(frequency):

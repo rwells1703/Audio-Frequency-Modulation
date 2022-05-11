@@ -1,16 +1,16 @@
 import numpy as np
 import pyaudio
 
-SEGMENT_TIME = 0.1
+SEGMENT_TIME = 0.2
 
 # Define pyaudio stream parameters
 SAMPLE_RATE = 48000
 FORMAT_PLAY = pyaudio.paFloat32
 FORMAT_RECORD = pyaudio.paInt16
-RECORDING_BLOCK_SIZE = int(SAMPLE_RATE * (SEGMENT_TIME / 2))
+RECORDING_BLOCK_SIZE = int(SAMPLE_RATE * (SEGMENT_TIME / 8))
 AUDIO_CHANNELS = 1
 
-CHANNELS = [(1000,1200,600), (1400,1600,800), (1800,2000,1000)]
+CHANNELS = [(1000,1200,3000), (1400,1600,3200), (1800, 2000, 3400), (2200, 2400, 3600)]
 
 # Define the number of bits used in various places
 SEGMENT_BITS = 1
@@ -21,8 +21,8 @@ RECORD_BITS = 16
 
 # The proportion of values within a sample group (of CERTAINTY_SAMPLE_SIZE) that should be identical, before storing the value
 # e.g. 80% or more of the values in [1,1,1,9,1,2,1,1] should be equal to 1, otherwise the value will not be stored
-CERTAINTY = 6
-CERTAINTY_SAMPLE_SIZE = 9
+CERTAINTY = 5
+CERTAINTY_SAMPLE_SIZE = 10
 
 
 

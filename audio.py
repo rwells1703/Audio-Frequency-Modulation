@@ -3,6 +3,7 @@ import sounddevice as sd
 import time
 
 import constants
+import waves
 
 def start():
     stream_play = sd.OutputStream(
@@ -33,28 +34,25 @@ def play_audio(stream, data):
     with stream:
         stream.write(data)
 
+# Reads the audio as a wave
 def read_audio(stream):
-    data = stream.read(constants.RECORDING_BLOCK_SIZE)[0]
+    wave = stream.read(constants.RECORDING_BLOCK_SIZE)[0].flatten()
 
-    return data
+    return wave
 
-# Records the microphone input as a wave and outputs the data as bytes
+# Records the microphone audio
 def record_audio(stream, seconds, log=True):
     if log:
         print("Started recording")
     
-    data = b''
+    wave = []
 
     # Take the specified number of recording chunks
     for i in range(0, int(constants.SAMPLE_RATE / constants.RECORDING_BLOCK_SIZE * seconds)):
-        # Read the audio frame from the stream
-        with stream:
-            frame = stream.read(constants.RECORDING_BLOCK_SIZE)
-        # Write the frame to frame list
-        data += frame
+        # Write the frame to the data
+        wave = waves.combine_waves(wave, read_audio(stream))
 
     if log:
         print("Stopped recording")
 
-    #return data[47042:]
-    return data
+    return wave

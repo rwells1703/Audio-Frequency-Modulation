@@ -1,7 +1,6 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from sys import argv
-import time
 
 import audio
 import audio_file
@@ -106,18 +105,16 @@ def record_and_save():
     audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
 
 def record_and_fourier():
-    pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
+    stream_play, stream_record = audio.start()
 
-    data = audio.record_audio(stream_record, 5)
+    wave = audio.record_audio(stream_record, 5)
 
-    wave = np.frombuffer(data, dtype=np.int16)
+    #wave = np.frombuffer(data, dtype=np.int16)
 
     frequencies, fourier_wave = waves.generate_fourier_wave(wave)
 
     plt.plot(frequencies, fourier_wave)
     plt.show()
-
-    audio.stop_pyaudio(pyaudio_instance, stream_play, stream_record)
 
 def play_frequencies():
     pyaudio_instance, stream_play, stream_record = audio.start_pyaudio()
@@ -137,7 +134,7 @@ def play_frequencies():
 
     plt.grid(axis = "y")
     plt.plot(t, w)
-    #plt.show()
+    plt.show()
 
     audio.play_wave(stream_play, w)
 
@@ -146,40 +143,58 @@ def play_frequencies():
 def receive():
     stream_play, stream_record = audio.start()
 
+    data_stream_raw = []
+    data_stream = []
     x = 0
     freqs_max = (0,)*len(constants.CHANNELS)
     try:
         while True:
             # Record a chunk of audio and get its integer value
-            data = audio.read_audio(stream_record)
-
-            wave = data.flatten()
+            wave = audio.read_audio(stream_record)
 
             frequencies, fourier_wave = waves.generate_fourier_wave(wave)
 
-            #freq_max = int(shift_keying.get_loudest_frequency(frequencies, fourier_wave))
-            freqs_max_prev = freqs_max
             freqs_max = shift_keying.get_loudest_frequencies(frequencies, fourier_wave, len(constants.CHANNELS))
+            
             #print(freqs_max)
 
+            data = [None,]*len(constants.CHANNELS)
+
             for i, channel in enumerate(constants.CHANNELS):
-                if (freqs_max[i] == channel[0] and freqs_max_prev[i] == channel[2]):
-                    print(x, ": 0")
-                    x += 1
-                elif (freqs_max[i] == channel[1] and freqs_max_prev[i] == channel[2]):
-                    print(x, ": 1")
-                    x += 1
+                if channel[0] in freqs_max:
+                    data[i] = 0
+                if channel[1] in freqs_max:
+                    data[i] = 1
+                if channel[2] in freqs_max:
+                    data[i] = 9
+            
+            if not None in data:
+                #print(freqs_max)
+                #print(x, ": ", data)
+                x += len(constants.CHANNELS)
+                data_stream_raw.append(data)
+                #print(data)
+
+                if shift_keying.check_sent_deliberately(data, data_stream_raw) and shift_keying.check_not_added(data, data_stream):
+                    data_stream.append(data)
+                    print(data_stream)
 
     except KeyboardInterrupt:
-        print()
+        bits = np.array(data_stream).flatten()
+        bit_string = "".join([str(x) for x in bits])
+        bit_string = bit_string.replace("9","")
+        print(bit_string)
+        if bit_string == data_conversion.pad_bits("111100101010101000010101111", len(constants.CHANNELS)):
+            print("SAME")
 
 def send(text):
     stream_play, stream_record = audio.start()
 
-    #data = "100000000000000000100101000101001010100001000010101110100000001001010111111101010000101"
     data = "111100101010101000010101111"
-    #data = "10"*20
     data = data_conversion.pad_bits(data, len(constants.CHANNELS))
+
+    for i, d in enumerate(data):
+        print(i, ":", d)
     print(data)
 
     wave = []
@@ -223,8 +238,6 @@ def send(text):
     #plt.grid(axis = "y")
     #plt.plot(t, wave)
     #plt.show()
-
-    #wave /= len(freqs) + 1
 
     audio.play_wave(stream_play, wave)
 
