@@ -1,3 +1,4 @@
+from itertools import tee
 import numpy as np
 
 import audio
@@ -10,15 +11,15 @@ class BFSK:
     SEGMENT_TIME = 0.2
     
     # The value marking the end of a data segment
-    END_SEGMENT_VALUE = 9
+    GAP_VALUES = [8,9]
 
     # The number of bits in a recorded audio block (based upon segment time)
-    RECORDING_BLOCK_SIZE = int(audio.SAMPLE_RATE * (SEGMENT_TIME / 8))
+    RECORDING_BLOCK_SIZE = int(audio.SAMPLE_RATE * (SEGMENT_TIME / 4))
 
     # The proportion of segments within a sample group that should be identical, before storing the segment
     # e.g. 3 out of 6 segment should be equal to 101011 otherwise the segment will not be stored
-    CERTAINTY = 5
-    CERTAINTY_SAMPLE_SIZE = 10
+    CERTAINTY = 3
+    CERTAINTY_SAMPLE_SIZE = 4
 
     # The frequency channels used for transmission
     CHANNELS = [(1000, 1200, 3000), (1400, 1600, 3200), (1800, 2000, 3400)]
@@ -31,6 +32,8 @@ class BFSK:
         bits = data_conversion.text_to_bits(text)
         bits_padded = data_conversion.pad_bits(bits, BFSK.CHANNEL_COUNT)
         
+        print(bits)
+
         # Converts padded input bits into a modulated audio waveform
         wave = self.bits_to_wave(bits_padded)
 
@@ -42,8 +45,8 @@ class BFSK:
 
         data_stream_raw = []
         data_stream = []
-
-        previous_text = ""
+        text = ""
+        g = 0
 
         while True:
             # Record a chunk of audio and get its waveform
@@ -66,24 +69,31 @@ class BFSK:
                 if channel[1] in freqs_max:
                     data[i] = 1
                 if channel[2] in freqs_max:
-                    data[i] = BFSK.END_SEGMENT_VALUE
+                    data[i] = BFSK.GAP_VALUES[g]
             
             # Verify single bit in the segment was received at once
             if not None in data:
                 data_stream_raw.append(data)
+            print(data)
 
-                # Add the segment to the stream of verified segment
-                if verification.check_sent_deliberately(data, data_stream_raw, BFSK.CERTAINTY, BFSK.CERTAINTY_SAMPLE_SIZE) and verification.check_not_added(data, data_stream):
-                    data_stream.append(data)
+            # Add the segment to the stream of verified segment
+            if verification.check_sent_deliberately(data, data_stream_raw, BFSK.CERTAINTY, BFSK.CERTAINTY_SAMPLE_SIZE, [BFSK.GAP_VALUES[g],]*BFSK.CHANNEL_COUNT) and verification.check_not_added(data, data_stream):
+                data_stream.append(data)
+                data_stream.append([BFSK.GAP_VALUES[g],]*BFSK.CHANNEL_COUNT)
 
-            # Converts the data stream into readable text
-            bits = self.data_stream_to_bits(data_stream)
-            text = data_conversion.bits_to_text(bits)
+                g = (g+1)%2
+                print(data_stream)
 
-            # If the text has changed since the last iteration, display the new text
-            if previous_text != text:
-                print(text)
-                previous_text = text
+                # Converts the data stream into readable text
+                bits = self.data_stream_to_bits(data_stream)
+
+                # Display the text when it changes
+                text_new = data_conversion.bits_to_text(bits)
+
+                # If the text has changed since the last iteration, display the new text
+                if text_new != text:
+                    text = text_new
+                    print(text)
     
     # Takes a list of bits, and converts them into a modulated audio waveform using BFSK
     def bits_to_wave(self, bits):
@@ -119,7 +129,7 @@ class BFSK:
                 channel += 1
 
             # Combine the actual data wave, with the end of segment wave
-            wave_segment = waves.combine_waves(wave_data_segment, wave_gap_segment)
+            wave_segment = waves.combine_waves(wave_gap_segment, wave_data_segment)
 
             # Combine this with the overall wave
             wave = waves.combine_waves(wave, wave_segment)
@@ -158,6 +168,6 @@ class BFSK:
     def data_stream_to_bits(self, data_stream):
         bit_array = np.array(data_stream).flatten()
         bits_with_end_val = "".join([str(x) for x in bit_array])
-        bits = bits_with_end_val.replace(str(BFSK.END_SEGMENT_VALUE),"")
+        bits = bits_with_end_val.replace(str(BFSK.GAP_VALUES[0]),"").replace(str(BFSK.GAP_VALUES[1]),"")
 
         return bits

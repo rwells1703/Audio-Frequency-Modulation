@@ -8,18 +8,18 @@ import waves
 
 class HOFSK:
     # Time taken for a single segment to play
-    SEGMENT_TIME = 0.2
+    SEGMENT_TIME = 0.1
 
     # The number of bits in a recorded audio block
-    RECORDING_BLOCK_SIZE = 1024
+    RECORDING_BLOCK_SIZE =  1024
 
     # The proportion of segments within a sample group that should be identical, before storing the segment
     # e.g. 3 out of 6 segment should be equal to 1 otherwise the segment will not be stored
-    CERTAINTY = 6
-    CERTAINTY_SAMPLE_SIZE = 9
+    CERTAINTY = 4
+    CERTAINTY_SAMPLE_SIZE = 7
 
     # The number of bits per segment
-    SEGMENT_BITS = 7
+    SEGMENT_BITS = 4
 
     # Increments by the step at which recoreded frequencies are quantized
     RECORD_FREQ_STEP = audio.SAMPLE_RATE / RECORDING_BLOCK_SIZE
@@ -27,7 +27,7 @@ class HOFSK:
     # The range of frequency quantizations used
     MIN_FREQ = 600
     MIN_FREQ = MIN_FREQ - (MIN_FREQ % RECORD_FREQ_STEP)
-    MAX_FREQ = MIN_FREQ + (2**SEGMENT_BITS) * RECORD_FREQ_STEP
+    MAX_FREQ = MIN_FREQ + (2**SEGMENT_BITS+2) * (RECORD_FREQ_STEP)
     FREQ_RANGE = np.arange(start=MIN_FREQ, stop=MAX_FREQ, step=RECORD_FREQ_STEP)
 
     def send(self, text):
@@ -38,13 +38,15 @@ class HOFSK:
 
         # Convert the bits into an array of integers
         int_stream = self.bits_to_ints(bits)
+
         int_stream_gaps = self.add_ints_gaps(int_stream)
-        
+        #print(int_stream_gaps)
+
         # Modulate the data
         wave = self.ints_to_wave(int_stream_gaps)
 
         # Plot the waves
-        self.plot_sent_waves(bits, int_stream, int_stream_gaps, wave)
+        #self.plot_sent_waves(bits, int_stream, int_stream_gaps, wave)
 
         # Play the modulated wave as a sound
         audio.play_wave(stream_play, wave)
@@ -52,10 +54,11 @@ class HOFSK:
     def receive(self):
         stream_play, stream_record = audio.start(HOFSK.RECORDING_BLOCK_SIZE)
 
-        # Buffers storing
-        int_stream_raw = [0] * (HOFSK.CERTAINTY_SAMPLE_SIZE)
+        # Buffers storing ints
+        int_stream_raw = []
         int_stream = []
         text = ""
+        g = 0
 
         while True:
             # Record a chunk of audio and get its waveform
@@ -67,24 +70,28 @@ class HOFSK:
             # Add the value to the stream of potential values
             if (int_value != None):
                 int_stream_raw.append(int_value)
+                #print(int_value)
 
             # Add the value to the stream of verified values
-            if verification.check_sent_deliberately(int_value, int_stream_raw, HOFSK.CERTAINTY, HOFSK.CERTAINTY_SAMPLE_SIZE) and verification.check_not_added(int_value, int_stream):
+            if verification.check_sent_deliberately(int_value, int_stream_raw, HOFSK.CERTAINTY, HOFSK.CERTAINTY_SAMPLE_SIZE, g) and verification.check_not_added(int_value, int_stream):
                 int_stream.append(int_value)
+                int_stream.append(g)
+                g = (g+1)%2
+                #print(int_stream)
 
-            # Convert list of integers back into text
-            int_stream_no_gaps = self.remove_ints_gaps(int_stream)
+                # Convert list of integers back into text
+                int_stream_no_gaps = self.remove_ints_gaps(int_stream)
 
-            # Convert the int stream to bits
-            bits = self.ints_to_bits(int_stream_no_gaps)
+                # Convert the int stream to bits
+                bits = self.ints_to_bits(int_stream_no_gaps)
 
-            # Display the text when it changes
-            text_new = data_conversion.bits_to_text(bits)
+                # Display the text when it changes
+                text_new = data_conversion.bits_to_text(bits)
 
-            # If the text has changed since the last iteration, display the new text
-            if text_new != text:
-                text = text_new
-                print(text)
+                # If the text has changed since the last iteration, display the new text
+                if text_new != text:
+                    text = text_new
+                    print(text)
 
     # Converts a string of bits to an array of integers representing them
     def bits_to_ints(self, bits):
@@ -98,7 +105,7 @@ class HOFSK:
         # Loop through the bits and convert sections to an integer
         while end <= len(bits):
             bits_segment = bits[start:end]
-            integers.append(int(bits_segment, 2))
+            integers.append(int(bits_segment, 2) + 2)
             
             start += HOFSK.SEGMENT_BITS
             end += HOFSK.SEGMENT_BITS
@@ -110,7 +117,7 @@ class HOFSK:
         bits = ""
 
         for i in int_stream:
-            bits += bin(i)[2:].zfill(HOFSK.SEGMENT_BITS)
+            bits += bin(i-2)[2:].zfill(HOFSK.SEGMENT_BITS)
         
         return bits
 
@@ -118,9 +125,14 @@ class HOFSK:
     def add_ints_gaps(self, int_stream):
         output = []
 
+        # Value for gap value fluctuates between 0 and 1
+        g = 0
         for i in int_stream:
+            output.append(g)
             output.append(i)
-            output.append(0)
+
+            g = (g+1)%2
+
 
         return output
 
@@ -129,7 +141,8 @@ class HOFSK:
         output = []
 
         for i in int_stream:
-            if i != 0:
+            # Remove any gap values
+            if i != 0 and i != 1:
                 output.append(i)
 
         return output
@@ -159,6 +172,8 @@ class HOFSK:
             return None
         
         int_value = self.match_frequency(freq_max)
+
+        #print(int_value, ": ", freq_max)
 
         return int_value
 

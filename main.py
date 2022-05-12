@@ -1,5 +1,6 @@
 from sys import argv
 
+from bfsk import BFSK
 from hofsk import HOFSK
 
 def main():
