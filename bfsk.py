@@ -2,7 +2,7 @@ import numpy as np
 
 import audio
 import data_conversion
-import shift_keying
+import verification
 import waves
 
 class BFSK:
@@ -73,7 +73,7 @@ class BFSK:
                 data_stream_raw.append(data)
 
                 # Add the segment to the stream of verified segment
-                if shift_keying.check_sent_deliberately(data, data_stream_raw, BFSK.CERTAINTY, BFSK.CERTAINTY_SAMPLE_SIZE) and shift_keying.check_not_added(data, data_stream):
+                if verification.check_sent_deliberately(data, data_stream_raw, BFSK.CERTAINTY, BFSK.CERTAINTY_SAMPLE_SIZE) and verification.check_not_added(data, data_stream):
                     data_stream.append(data)
 
             # Converts the data stream into readable text

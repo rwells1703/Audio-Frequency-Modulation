@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 
 import audio
 import data_conversion
-import shift_keying
+import verification
 import waves
 
 class HOFSK:
@@ -69,7 +69,7 @@ class HOFSK:
                 int_stream_raw.append(int_value)
 
             # Add the value to the stream of verified values
-            if shift_keying.check_sent_deliberately(int_value, int_stream_raw, HOFSK.CERTAINTY, HOFSK.CERTAINTY_SAMPLE_SIZE) and shift_keying.check_not_added(int_value, int_stream):
+            if verification.check_sent_deliberately(int_value, int_stream_raw, HOFSK.CERTAINTY, HOFSK.CERTAINTY_SAMPLE_SIZE) and verification.check_not_added(int_value, int_stream):
                 int_stream.append(int_value)
 
             # Convert list of integers back into text

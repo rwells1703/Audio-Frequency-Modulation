@@ -14,7 +14,7 @@ def combine_waves(wave1, wave2):
 
 # Generate a time axis for a wave
 def generate_time_axis(length, divisions):
-    return np.linspace(0, length, np.ceil(divisions).astype(int), False)
+    return np.linspace(0, length, np.round(divisions).astype(int), False)
 
 # Convert the binary string into a digital wave
 def generate_digital_wave(binary_string):
