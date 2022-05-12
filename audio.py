@@ -57,7 +57,7 @@ def record_audio(stream, seconds, recording_block_size, log=True):
     # Take the specified number of recording chunks
     for i in range(0, int(audio.SAMPLE_RATE / recording_block_size * seconds)):
         # Write the frame to the data
-        wave = waves.combine_waves(wave, read_wave(stream))
+        wave = waves.combine_waves(wave, read_wave(stream, recording_block_size))
 
     if log:
         print("Stopped recording")
