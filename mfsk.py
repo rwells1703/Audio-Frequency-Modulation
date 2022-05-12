@@ -81,6 +81,7 @@ class MFSK:
             # Display the text when it changes
             text_new = data_conversion.bits_to_text(bits)
 
+            # If the text has changed since the last iteration, display the new text
             if text_new != text:
                 text = text_new
                 print(text)

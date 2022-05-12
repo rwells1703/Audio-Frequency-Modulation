@@ -24,4 +24,3 @@ def check_not_added(int_value, int_stream):
 
     # The value is already stored
     return False
-
