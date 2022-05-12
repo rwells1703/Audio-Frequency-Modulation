@@ -6,7 +6,7 @@ import data_conversion
 import shift_keying
 import waves
 
-class MFSK:
+class HOFSK:
     # Time taken for a single segment to play
     SEGMENT_TIME = 0.2
 
@@ -31,7 +31,7 @@ class MFSK:
     FREQ_RANGE = np.arange(start=MIN_FREQ, stop=MAX_FREQ, step=RECORD_FREQ_STEP)
 
     def send(self, text):
-        stream_play, stream_record = audio.start(MFSK.RECORDING_BLOCK_SIZE)
+        stream_play, stream_record = audio.start(HOFSK.RECORDING_BLOCK_SIZE)
 
         # Convert the text into bits
         bits = data_conversion.text_to_bits(text)
@@ -50,16 +50,16 @@ class MFSK:
         audio.play_wave(stream_play, wave)
 
     def receive(self):
-        stream_play, stream_record = audio.start(MFSK.RECORDING_BLOCK_SIZE)
+        stream_play, stream_record = audio.start(HOFSK.RECORDING_BLOCK_SIZE)
 
         # Buffers storing
-        int_stream_raw = [0] * (MFSK.CERTAINTY_SAMPLE_SIZE)
+        int_stream_raw = [0] * (HOFSK.CERTAINTY_SAMPLE_SIZE)
         int_stream = []
         text = ""
 
         while True:
             # Record a chunk of audio and get its waveform
-            wave = audio.read_wave(stream_record, MFSK.RECORDING_BLOCK_SIZE)
+            wave = audio.read_wave(stream_record, HOFSK.RECORDING_BLOCK_SIZE)
 
             # Extract integer values from the audio wave
             int_value = self.wave_to_int(wave)
@@ -69,7 +69,7 @@ class MFSK:
                 int_stream_raw.append(int_value)
 
             # Add the value to the stream of verified values
-            if shift_keying.check_sent_deliberately(int_value, int_stream_raw, MFSK.CERTAINTY, MFSK.CERTAINTY_SAMPLE_SIZE) and shift_keying.check_not_added(int_value, int_stream):
+            if shift_keying.check_sent_deliberately(int_value, int_stream_raw, HOFSK.CERTAINTY, HOFSK.CERTAINTY_SAMPLE_SIZE) and shift_keying.check_not_added(int_value, int_stream):
                 int_stream.append(int_value)
 
             # Convert list of integers back into text
@@ -89,9 +89,9 @@ class MFSK:
     # Converts a string of bits to an array of integers representing them
     def bits_to_ints(self, bits):
         start = 0
-        end = MFSK.SEGMENT_BITS
+        end = HOFSK.SEGMENT_BITS
         
-        bits = data_conversion.pad_bits(bits, MFSK.SEGMENT_BITS)
+        bits = data_conversion.pad_bits(bits, HOFSK.SEGMENT_BITS)
 
         integers = []
 
@@ -100,8 +100,8 @@ class MFSK:
             bits_segment = bits[start:end]
             integers.append(int(bits_segment, 2))
             
-            start += MFSK.SEGMENT_BITS
-            end += MFSK.SEGMENT_BITS
+            start += HOFSK.SEGMENT_BITS
+            end += HOFSK.SEGMENT_BITS
 
         return integers
 
@@ -110,7 +110,7 @@ class MFSK:
         bits = ""
 
         for i in int_stream:
-            bits += bin(i)[2:].zfill(MFSK.SEGMENT_BITS)
+            bits += bin(i)[2:].zfill(HOFSK.SEGMENT_BITS)
         
         return bits
 
@@ -141,10 +141,10 @@ class MFSK:
         # Loop through the input data
         for i in ints:
             # Get frequency values for that section of wave
-            frequency = MFSK.FREQ_RANGE[i]
+            frequency = HOFSK.FREQ_RANGE[i]
 
             # Generate that section of wave and append it to the overall wave
-            wave_segment = waves.generate_wave(frequency, 1, 1, MFSK.SEGMENT_TIME)
+            wave_segment = waves.generate_wave(frequency, 1, 1, HOFSK.SEGMENT_TIME)
             wave = waves.combine_waves(wave, wave_segment)
 
         return wave
@@ -164,7 +164,7 @@ class MFSK:
 
     # Rejects any frequency higher or lower than the clipping bounds
     def clip_frequency(self, frequency):
-        if frequency > MFSK.MAX_FREQ or frequency < MFSK.MIN_FREQ:
+        if frequency > HOFSK.MAX_FREQ or frequency < HOFSK.MIN_FREQ:
             return True
 
         return False
@@ -172,7 +172,7 @@ class MFSK:
     # Finds the correct integer data point for a given approximate frequency
     def match_frequency(self, frequency):
         # Get the corresponding integer value for that frequency
-        int_values_matched = np.where(MFSK.FREQ_RANGE == frequency)[0]
+        int_values_matched = np.where(HOFSK.FREQ_RANGE == frequency)[0]
         if len(int_values_matched) > 0:
             return int_values_matched[0]
 
@@ -192,12 +192,12 @@ class MFSK:
         digital_wave = waves.generate_digital_wave(bits)
 
         # Turn the data into a square signal wave
-        square_wave = waves.generate_square_wave(int_stream, MFSK.SEGMENT_TIME)
-        square_wave_time = waves.generate_time_axis(len(int_stream) * MFSK.SEGMENT_TIME, len(int_stream) * MFSK.SEGMENT_TIME * audio.SAMPLE_RATE)
+        square_wave = waves.generate_square_wave(int_stream, HOFSK.SEGMENT_TIME)
+        square_wave_time = waves.generate_time_axis(len(int_stream) * HOFSK.SEGMENT_TIME, len(int_stream) * HOFSK.SEGMENT_TIME * audio.SAMPLE_RATE)
 
         # Turn the data into a square signal wave
-        square_wave_gapped = waves.generate_square_wave(int_stream_gaps, MFSK.SEGMENT_TIME)
-        square_wave_gapped_time = waves.generate_time_axis(len(int_stream_gaps) * MFSK.SEGMENT_TIME, len(int_stream_gaps) * MFSK.SEGMENT_TIME * audio.SAMPLE_RATE)
+        square_wave_gapped = waves.generate_square_wave(int_stream_gaps, HOFSK.SEGMENT_TIME)
+        square_wave_gapped_time = waves.generate_time_axis(len(int_stream_gaps) * HOFSK.SEGMENT_TIME, len(int_stream_gaps) * HOFSK.SEGMENT_TIME * audio.SAMPLE_RATE)
 
         # Plot the waves on a graph
         plt.subplot(4,1,1)
